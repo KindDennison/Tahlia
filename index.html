@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jacob's Apps</title>
+  <style>
+    :root {
+      --bg: #f4f4f4;
+      --card: #ffffff;
+      --primary: #0055a5;
+      --primary-dark: #003f7f;
+      --text: #333;
+      --muted: #666;
+      --border: #d9d9d9;
+      --placeholder-bg: #eef2f6;
+      --placeholder-text: #5f6b7a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .main-container {
+      background: var(--card);
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      text-align: center;
+      max-width: 800px;
+      width: 100%;
+      border: 1px solid var(--border);
+    }
+
+    h1 {
+      color: var(--primary);
+      margin: 0 0 0.75rem;
+      font-size: 2rem;
+    }
+
+    p {
+      color: var(--muted);
+      margin: 0 0 1.5rem;
+      font-size: 1rem;
+    }
+
+    .app-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .app-icon {
+      background: var(--primary);
+      padding: 1.5rem 1rem;
+      border-radius: 12px;
+      text-decoration: none;
+      color: #fff;
+      font-weight: bold;
+      font-size: 1.05rem;
+      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: centre;
+      align-items: centre;
+      min-height: 150px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    }
+
+    .app-icon:hover {
+      background: var(--primary-dark);
+      transform: translateY(-4px);
+    }
+
+    .app-icon .icon {
+      width: 56px;
+      height: 56px;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .app-name {
+      margin-top: 4px;
+    }
+
+    .app-placeholder {
+      background: var(--placeholder-bg);
+      color: var(--placeholder-text);
+      border: 2px dashed #c9d4df;
+    }
+
+    .app-placeholder:hover {
+      background: #e4ebf2;
+      color: #435160;
+    }
+
+    .app-placeholder .icon {
+      width: 56px;
+      height: 56px;
+      margin-bottom: 10px;
+      display: block;
+      color: var(--placeholder-text);
+    }
+
+    .small-note {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <h1>Welcome!</h1>
+    <p>Select an application to get started:</p>
+
+    <div class="app-grid">
+      <a href="paint.html" class="app-icon">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M4 5h16v2H4V5zm0 6h10v2H4v-2zm0 6h16v2H4v-2zm14-9 3 3-3 3V8z"/>
+        </svg>
+        <div class="app-name">Paint</div>
+      </a>
+
+      <a href="garden.html" class="app-icon app-placeholder">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M13 3L4 14h6l-1 7 9-11h-6l1-7z"/>
+        </svg>
+        <div class="app-name">Garden</div>
+      </a>
+
+      <a href="under-development.html" class="app-icon app-placeholder">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 13H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V6h10v2z"/>
+        </svg>
+        <div class="app-name">App Placeholder 2</div>
+      </a>
+
+      <a href="under-development.html" class="app-icon app-placeholder">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 2 1 21h22L12 2zm1 16h-2v-2h2v2zm0-4h-2V9h2v5z"/>
+        </svg>
+        <div class="app-name">App Placeholder 3</div>
+      </a>
+    </div>
+
+    <div class="small-note">
+      More apps will be added here as they are developed.
+    </div>
+  </div>
+</body>
+</html>
