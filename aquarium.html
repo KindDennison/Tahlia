@@ -35,9 +35,7 @@ import {
   collection,
   query,
   where,
-  orderBy,
-  onSnapshot,
-  Timestamp
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -52,14 +50,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const ac = document.getElementById('aquariumCanvas');
-const ax = ac.getContext('2d');
+const ac = document.getElementById("aquariumCanvas");
+const ax = ac.getContext("2d");
 
 let AW;
 let AH;
 let DPR;
 
-function resizeAquarium(){
+function resizeAquarium() {
   DPR = window.devicePixelRatio || 1;
   AW = ac.clientWidth;
   AH = ac.clientHeight;
@@ -70,7 +68,7 @@ function resizeAquarium(){
   ax.setTransform(DPR, 0, 0, DPR, 0, 0);
 }
 
-window.addEventListener('resize', resizeAquarium);
+window.addEventListener("resize", resizeAquarium);
 resizeAquarium();
 
 const swimmers = [];
@@ -88,28 +86,43 @@ for (let i = 0; i < 45; i++) {
   });
 }
 
-const since = Timestamp.fromMillis(Date.now() - 120000);
-
 const q = query(
   collection(db, "creatures"),
-  where("habitat", "==", "aquarium"),
-  where("createdAt", ">", since),
-  orderBy("createdAt")
+  where("habitat", "==", "aquarium")
 );
 
-onSnapshot(q, (snap) => {
-  snap.docChanges().forEach(change => {
-    if (change.type === "added" && !seen.has(change.doc.id)) {
-      seen.add(change.doc.id);
-      const data = change.doc.data();
-      spawn(data.img, data.animal || "fish");
-    }
-  });
-});
+onSnapshot(
+  q,
+  (snap) => {
+    console.log("Aquarium snapshot received. Documents:", snap.size);
 
-function spawn(dataUrl, animal){
+    snap.docChanges().forEach((change) => {
+      if (change.type !== "added") return;
+      if (seen.has(change.doc.id)) return;
+
+      seen.add(change.doc.id);
+
+      const data = change.doc.data();
+
+      console.log("Aquarium creature found:", change.doc.id, data);
+
+      if (!data.img) {
+        console.warn("Creature skipped because img field is missing:", change.doc.id, data);
+        return;
+      }
+
+      const animal = String(data.animal || "fish").toLowerCase().trim();
+
+      spawn(data.img, animal);
+    });
+  },
+  (error) => {
+    console.error("Error listening for aquarium creatures:", error);
+  }
+);
+
+function spawn(dataUrl, animal) {
   const img = new Image();
-  img.src = dataUrl;
 
   img.onload = () => {
     const direction = Math.random() < 0.5 ? -1 : 1;
@@ -128,10 +141,18 @@ function spawn(dataUrl, animal){
       born: performance.now(),
       alpha: 0
     });
+
+    console.log("Spawned aquarium creature:", animal);
   };
+
+  img.onerror = () => {
+    console.error("Failed to load creature image:", animal);
+  };
+
+  img.src = dataUrl;
 }
 
-function drawAquariumBg(){
+function drawAquariumBg() {
   const g = ax.createLinearGradient(0, 0, 0, AH);
   g.addColorStop(0, "#4fc3f7");
   g.addColorStop(0.55, "#0288d1");
@@ -190,7 +211,7 @@ function drawAquariumBg(){
   ax.restore();
 }
 
-function updateSwimmer(s){
+function updateSwimmer(s) {
   s.wobble += s.animal === "jellyfish" ? 0.08 : 0.14;
 
   if (s.animal === "jellyfish") {
@@ -210,7 +231,7 @@ function updateSwimmer(s){
   if (s.x > AW + 120) s.x = -120;
 }
 
-function drawSwimmer(s){
+function drawSwimmer(s) {
   ax.save();
   ax.globalAlpha = s.alpha;
   ax.translate(s.x, s.y);
@@ -232,7 +253,7 @@ function drawSwimmer(s){
   ax.restore();
 }
 
-function loop(now){
+function loop(now) {
   drawAquariumBg();
 
   for (let i = swimmers.length - 1; i >= 0; i--) {
