@@ -51,9 +51,9 @@ const db = getFirestore(app);
 const ac = document.getElementById("aquariumCanvas");
 const ax = ac.getContext("2d");
 
-let AW;
-let AH;
-let DPR;
+let AW = 0;
+let AH = 0;
+let DPR = 1;
 
 function resizeAquarium() {
   DPR = window.devicePixelRatio || 1;
@@ -74,6 +74,54 @@ const seen = new Set();
 const bubbles = [];
 const LIFETIME_MS = 90000;
 
+const ANIMAL_STYLE = {
+  fish: {
+    flip: -1,
+    w: 320,
+    h: 220,
+    ox: 160,
+    oy: 110,
+    scaleMin: 0.42,
+    scaleMax: 0.56
+  },
+  shark: {
+    flip: -1,
+    w: 380,
+    h: 240,
+    ox: 190,
+    oy: 120,
+    scaleMin: 0.62,
+    scaleMax: 0.82
+  },
+  turtle: {
+    flip: 1,
+    w: 300,
+    h: 220,
+    ox: 150,
+    oy: 110,
+    scaleMin: 0.50,
+    scaleMax: 0.68
+  },
+  jellyfish: {
+    flip: 1,
+    w: 320,
+    h: 300,
+    ox: 160,
+    oy: 150,
+    scaleMin: 0.55,
+    scaleMax: 0.80
+  },
+  default: {
+    flip: 1,
+    w: 320,
+    h: 240,
+    ox: 160,
+    oy: 120,
+    scaleMin: 0.45,
+    scaleMax: 0.60
+  }
+};
+
 for (let i = 0; i < 45; i++) {
   bubbles.push({
     x: Math.random() * AW,
@@ -82,6 +130,10 @@ for (let i = 0; i < 45; i++) {
     speed: 0.4 + Math.random() * 1.2,
     alpha: 0.15 + Math.random() * 0.35
   });
+}
+
+function getStyle(animal) {
+  return ANIMAL_STYLE[animal] || ANIMAL_STYLE.default;
 }
 
 onSnapshot(
@@ -115,15 +167,9 @@ onSnapshot(
   }
 );
 
-function getFacingFlip(animal) {
-  if (animal === "jellyfish") return 1;
-  if (animal === "shark") return 1;
-  if (animal === "turtle") return 1;
-  return -1;
-}
-
 function spawn(dataUrl, animal) {
   const img = new Image();
+  const style = getStyle(animal);
 
   img.onload = () => {
     const direction = Math.random() < 0.5 ? -1 : 1;
@@ -131,12 +177,12 @@ function spawn(dataUrl, animal) {
     swimmers.push({
       img,
       animal,
-      facingFlip: getFacingFlip(animal),
+      style,
       x: animal === "jellyfish"
         ? Math.random() * AW * 0.6 + AW * 0.2
         : direction === 1
-          ? -80
-          : AW + 80,
+          ? -100
+          : AW + 100,
       y: animal === "jellyfish"
         ? Math.random() * AH * 0.45 + AH * 0.2
         : Math.random() * AH * 0.75 + AH * 0.1,
@@ -147,11 +193,7 @@ function spawn(dataUrl, animal) {
         ? 0
         : (Math.random() - 0.5) * 0.7,
       wobble: Math.random() * Math.PI * 2,
-      scale: animal === "shark"
-        ? 0.65 + Math.random() * 0.45
-        : animal === "jellyfish"
-          ? 0.55 + Math.random() * 0.25
-          : 0.45 + Math.random() * 0.45,
+      scale: style.scaleMin + Math.random() * (style.scaleMax - style.scaleMin),
       born: performance.now(),
       alpha: 0
     });
@@ -239,11 +281,13 @@ function updateSwimmer(s) {
 
   if (s.y < 60 || s.y > AH - 90) s.vy *= -1;
 
-  if (s.x < -120) s.x = AW + 120;
-  if (s.x > AW + 120) s.x = -120;
+  if (s.x < -140) s.x = AW + 140;
+  if (s.x > AW + 140) s.x = -140;
 }
 
 function drawSwimmer(s) {
+  const style = s.style || getStyle(s.animal);
+
   ax.save();
   ax.globalAlpha = s.alpha;
   ax.translate(s.x, s.y);
@@ -251,18 +295,16 @@ function drawSwimmer(s) {
   if (s.animal === "jellyfish") {
     ax.rotate(Math.sin(s.wobble) * 0.05);
     ax.scale(s.scale, s.scale * (0.92 + Math.sin(s.wobble) * 0.06));
-    ax.drawImage(s.img, -160, -150, 320, 300);
+    ax.drawImage(s.img, -style.ox, -style.oy, style.w, style.h);
   } else {
-    const flip = s.facingFlip;
-
-    if (flip < 0) {
+    if (style.flip < 0) {
       ax.scale(-s.scale, s.scale);
     } else {
       ax.scale(s.scale, s.scale);
     }
 
     ax.rotate(Math.sin(s.wobble) * 0.04);
-    ax.drawImage(s.img, -160, -150, 320, 300);
+    ax.drawImage(s.img, -style.ox, -style.oy, style.w, style.h);
   }
 
   ax.restore();
