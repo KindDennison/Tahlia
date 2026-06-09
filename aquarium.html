@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aquarium</title>
+
+<style>
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #0077be;
+    cursor: none;
+  }
+
+  #aquariumCanvas {
+    width: 100vw;
+    height: 100vh;
+    display: block;
+  }
+</style>
+</head>
+
+<body>
+<canvas id="aquariumCanvas"></canvas>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  Timestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
+  authDomain: "teamdennisontracker.firebaseapp.com",
+  projectId: "teamdennisontracker",
+  storageBucket: "teamdennisontracker.firebasestorage.app",
+  messagingSenderId: "915336870349",
+  appId: "1:915336870349:web:c070e9b3fc0b688fe62c84"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const ac = document.getElementById('aquariumCanvas');
+const ax = ac.getContext('2d');
+
+let AW;
+let AH;
+let DPR;
+
+function resizeAquarium(){
+  DPR = window.devicePixelRatio || 1;
+  AW = ac.clientWidth;
+  AH = ac.clientHeight;
+
+  ac.width = Math.round(AW * DPR);
+  ac.height = Math.round(AH * DPR);
+
+  ax.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+
+window.addEventListener('resize', resizeAquarium);
+resizeAquarium();
+
+const swimmers = [];
+const seen = new Set();
+const bubbles = [];
+const LIFETIME_MS = 90000;
+
+for (let i = 0; i < 45; i++) {
+  bubbles.push({
+    x: Math.random() * AW,
+    y: Math.random() * AH,
+    r: 2 + Math.random() * 7,
+    speed: 0.4 + Math.random() * 1.2,
+    alpha: 0.15 + Math.random() * 0.35
+  });
+}
+
+const since = Timestamp.fromMillis(Date.now() - 120000);
+
+const q = query(
+  collection(db, "creatures"),
+  where("habitat", "==", "aquarium"),
+  where("createdAt", ">", since),
+  orderBy("createdAt")
+);
+
+onSnapshot(q, (snap) => {
+  snap.docChanges().forEach(change => {
+    if (change.type === "added" && !seen.has(change.doc.id)) {
+      seen.add(change.doc.id);
+      const data = change.doc.data();
+      spawn(data.img, data.animal || "fish");
+    }
+  });
+});
+
+function spawn(dataUrl, animal){
+  const img = new Image();
+  img.src = dataUrl;
+
+  img.onload = () => {
+    const direction = Math.random() < 0.5 ? -1 : 1;
+
+    swimmers.push({
+      img,
+      animal,
+      x: direction === 1 ? -80 : AW + 80,
+      y: Math.random() * AH * 0.75 + AH * 0.1,
+      vx: direction * (0.7 + Math.random() * 1.5),
+      vy: (Math.random() - 0.5) * 0.7,
+      wobble: Math.random() * Math.PI * 2,
+      scale: animal === "shark"
+        ? 0.65 + Math.random() * 0.45
+        : 0.45 + Math.random() * 0.45,
+      born: performance.now(),
+      alpha: 0
+    });
+  };
+}
+
+function drawAquariumBg(){
+  const g = ax.createLinearGradient(0, 0, 0, AH);
+  g.addColorStop(0, "#4fc3f7");
+  g.addColorStop(0.55, "#0288d1");
+  g.addColorStop(1, "#004d80");
+
+  ax.fillStyle = g;
+  ax.fillRect(0, 0, AW, AH);
+
+  ax.save();
+
+  ax.fillStyle = "#d7b26d";
+  ax.beginPath();
+  ax.moveTo(0, AH - 45);
+
+  for (let x = 0; x <= AW; x += 60) {
+    ax.quadraticCurveTo(x + 30, AH - 70, x + 60, AH - 45);
+  }
+
+  ax.lineTo(AW, AH);
+  ax.lineTo(0, AH);
+  ax.closePath();
+  ax.fill();
+
+  for (let i = 0; i < 10; i++) {
+    const x = (i * 173) % AW;
+    const h = 55 + (i * 37) % 90;
+
+    ax.strokeStyle = i % 2 ? "#2e7d32" : "#00897b";
+    ax.lineWidth = 5;
+
+    ax.beginPath();
+    ax.moveTo(x, AH - 35);
+    ax.bezierCurveTo(x - 15, AH - 75, x + 15, AH - 105, x, AH - 35 - h);
+    ax.stroke();
+  }
+
+  ax.fillStyle = "rgba(255,255,255,.25)";
+
+  for (const b of bubbles) {
+    ax.globalAlpha = b.alpha;
+    ax.beginPath();
+    ax.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ax.strokeStyle = "rgba(255,255,255,.5)";
+    ax.stroke();
+
+    b.y -= b.speed;
+    b.x += Math.sin(b.y * 0.02) * 0.25;
+
+    if (b.y < -20) {
+      b.y = AH + 20;
+      b.x = Math.random() * AW;
+    }
+  }
+
+  ax.globalAlpha = 1;
+  ax.restore();
+}
+
+function updateSwimmer(s){
+  s.wobble += s.animal === "jellyfish" ? 0.08 : 0.14;
+
+  if (s.animal === "jellyfish") {
+    s.y += Math.sin(s.wobble) * 0.45 - 0.15;
+    s.x += Math.sin(s.wobble * 0.7) * 0.35;
+  } else {
+    s.x += s.vx;
+    s.y += s.vy + Math.sin(s.wobble) * 0.5;
+
+    s.vy += (Math.random() - 0.5) * 0.05;
+    s.vy = Math.max(-1.1, Math.min(1.1, s.vy));
+  }
+
+  if (s.y < 60 || s.y > AH - 90) s.vy *= -1;
+
+  if (s.x < -120) s.x = AW + 120;
+  if (s.x > AW + 120) s.x = -120;
+}
+
+function drawSwimmer(s){
+  ax.save();
+  ax.globalAlpha = s.alpha;
+  ax.translate(s.x, s.y);
+
+  if (s.animal === "jellyfish") {
+    ax.rotate(Math.sin(s.wobble) * 0.08);
+    ax.scale(s.scale, s.scale * (0.9 + Math.sin(s.wobble) * 0.08));
+  } else {
+    if (s.vx < 0) {
+      ax.scale(-s.scale, s.scale);
+    } else {
+      ax.scale(s.scale, s.scale);
+    }
+
+    ax.rotate(Math.sin(s.wobble) * 0.04);
+  }
+
+  ax.drawImage(s.img, -160, -150);
+  ax.restore();
+}
+
+function loop(now){
+  drawAquariumBg();
+
+  for (let i = swimmers.length - 1; i >= 0; i--) {
+    const s = swimmers[i];
+    const age = now - s.born;
+
+    if (age < 1000) {
+      s.alpha = age / 1000;
+    } else if (age > LIFETIME_MS - 2000) {
+      s.alpha = Math.max(0, (LIFETIME_MS - age) / 2000);
+    } else {
+      s.alpha = 1;
+    }
+
+    if (age > LIFETIME_MS) {
+      swimmers.splice(i, 1);
+      continue;
+    }
+
+    updateSwimmer(s);
+    drawSwimmer(s);
+  }
+
+  requestAnimationFrame(loop);
+}
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
