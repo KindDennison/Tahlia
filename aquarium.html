@@ -33,8 +33,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import {
   getFirestore,
   collection,
-  query,
-  where,
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -86,13 +84,8 @@ for (let i = 0; i < 45; i++) {
   });
 }
 
-const q = query(
-  collection(db, "creatures"),
-  where("habitat", "==", "aquarium")
-);
-
 onSnapshot(
-  q,
+  collection(db, "creatures"),
   (snap) => {
     console.log("Aquarium snapshot received. Documents:", snap.size);
 
@@ -100,19 +93,20 @@ onSnapshot(
       if (change.type !== "added") return;
       if (seen.has(change.doc.id)) return;
 
-      seen.add(change.doc.id);
-
       const data = change.doc.data();
+      const habitat = String(data.habitat || "").toLowerCase().trim();
+      const animal = String(data.animal || "fish").toLowerCase().trim();
 
-      console.log("Aquarium creature found:", change.doc.id, data);
+      console.log("Creature found:", change.doc.id, data);
+
+      if (habitat !== "aquarium") return;
 
       if (!data.img) {
-        console.warn("Creature skipped because img field is missing:", change.doc.id, data);
+        console.warn("Skipped because img field is missing:", change.doc.id, data);
         return;
       }
 
-      const animal = String(data.animal || "fish").toLowerCase().trim();
-
+      seen.add(change.doc.id);
       spawn(data.img, animal);
     });
   },
