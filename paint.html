@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Paint a Butterfly</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; font-family: "Comic Sans MS", "Segoe UI", sans-serif; background: #f4f1e0; }
+  #paintPanel { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px; }
+  h1 { font-size: 1.5em; color: #33691e; margin: 6px 0; text-align: center; }
+  #paintWrap { position: relative; touch-action: none; }
+  #paintCanvas { background: #fff; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,.2); display: block; }
+  #palette { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 18px 0; max-width: 360px; }
+  .swatch { width: 46px; height: 46px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,.3); cursor: pointer; }
+  .swatch.active { border-color: #333; transform: scale(1.18); }
+  #flyBtn { font-size: 1.4em; font-weight: bold; color: #fff; background: #ff7043; border: none;
+            padding: 16px 34px; border-radius: 40px; box-shadow: 0 4px 0 #d84315; cursor: pointer; }
+  #flyBtn:active { transform: translateY(3px); box-shadow: 0 1px 0 #d84315; }
+  #flyBtn:disabled { opacity: .5; }
+  #status { height: 22px; font-size: .85em; color: #777; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div id="paintPanel">
+  <h1>Paint your butterfly, then let it fly!</h1>
+  <div id="paintWrap"><canvas id="paintCanvas" width="320" height="300"></canvas></div>
+  <div id="palette"></div>
+  <button id="flyBtn">Fly away! 🦋</button>
+  <div id="status"></div>
+</div>
+
+<script type="module">
+/* ================== FIREBASE ================== */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ===== PASTE FIREBASE CONFIG HERE ===== */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+/* ====================================== */
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+const butterflies = collection(db, "butterflies");   // collection name
+
+/* ================== PALETTE ================== */
+const colours = ["#e53935","#fb8c00","#fdd835","#43a047","#1e88e5",
+                 "#8e24aa","#ec407a","#00acc1","#6d4c41","#000000","#ffffff"];
+let currentColour = colours[5];
+const palette = document.getElementById('palette');
+colours.forEach((c)=>{
+  const s = document.createElement('div');
+  s.className = 'swatch' + (c===currentColour ? ' active':'');
+  s.style.background = c;
+  s.onclick = ()=>{ currentColour=c;
+    document.querySelectorAll('.swatch').forEach(x=>x.classList.remove('active'));
+    s.classList.add('active'); };
+  palette.appendChild(s);
+});
+
+/* ================== BUTTERFLY DRAWING ================== */
+const pc = document.getElementById('paintCanvas');
+const px = pc.getContext('2d');
+
+function butterflyPath(ctx){
+  const cx=160, cy=150;
+  ctx.beginPath();
+  ctx.moveTo(cx,cy);
+  ctx.bezierCurveTo(cx-90,cy-110, cx-150,cy-60, cx-60,cy-10);
+  ctx.bezierCurveTo(cx-30,cy-5, cx-15,cy-10, cx,cy);
+  ctx.moveTo(cx,cy);
+  ctx.bezierCurveTo(cx-50,cy+20, cx-110,cy+40, cx-70,cy+95);
+  ctx.bezierCurveTo(cx-40,cy+115, cx-15,cy+60, cx,cy+10);
+  ctx.moveTo(cx,cy);
+  ctx.bezierCurveTo(cx+90,cy-110, cx+150,cy-60, cx+60,cy-10);
+  ctx.bezierCurveTo(cx+30,cy-5, cx+15,cy-10, cx,cy);
+  ctx.moveTo(cx,cy);
+  ctx.bezierCurveTo(cx+50,cy+20, cx+110,cy+40, cx+70,cy+95);
+  ctx.bezierCurveTo(cx+40,cy+115, cx+15,cy+60, cx,cy+10);
+}
+
+const fill = document.createElement('canvas');
+fill.width = pc.width; fill.height = pc.height;
+const fx = fill.getContext('2d');
+
+function drawBody(ctx){
+  const cx=160, cy=150;
+  ctx.fillStyle = "#333";
+  ctx.beginPath(); ctx.ellipse(cx,cy+25,9,55,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,cy-30,12,0,Math.PI*2); ctx.fill();
+  ctx.lineWidth=3; ctx.strokeStyle="#333";
+  ctx.beginPath(); ctx.moveTo(cx-3,cy-38); ctx.quadraticCurveTo(cx-22,cy-70,cx-30,cy-72); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx+3,cy-38); ctx.quadraticCurveTo(cx+22,cy-70,cx+30,cy-72); ctx.stroke();
+}
+
+function render(){
+  px.clearRect(0,0,pc.width,pc.height);
+  px.fillStyle="#fff"; px.fillRect(0,0,pc.width,pc.height);  // white bg so JPEG isn't black
+  px.drawImage(fill,0,0);
+  px.lineWidth=4; px.strokeStyle="#333";
+  butterflyPath(px); px.stroke();
+  drawBody(px);
+}
+render();
+
+/* ================== PAINTING ================== */
+let painting=false;
+function paintAt(x,y){
+  fx.save(); butterflyPath(fx); fx.clip();
+  fx.fillStyle=currentColour;
+  fx.beginPath(); fx.arc(x,y,16,0,Math.PI*2); fx.fill();
+  fx.restore(); render();
+}
+function pos(e){
+  const r=pc.getBoundingClientRect();
+  const t = e.touches ? e.touches[0] : e;
+  return { x:(t.clientX-r.left)*(pc.width/r.width), y:(t.clientY-r.top)*(pc.height/r.height) };
+}
+function down(e){ painting=true; const p=pos(e); paintAt(p.x,p.y); e.preventDefault(); }
+function move(e){ if(painting){ const p=pos(e); paintAt(p.x,p.y); e.preventDefault(); } }
+function up(){ painting=false; }
+pc.addEventListener('mousedown',down); pc.addEventListener('mousemove',move);
+window.addEventListener('mouseup',up);
+pc.addEventListener('touchstart',down,{passive:false});
+pc.addEventListener('touchmove',move,{passive:false});
+pc.addEventListener('touchend',up);
+
+/* ================== FLY AWAY (write to Firestore) ================== */
+const flyBtn = document.getElementById('flyBtn');
+const statusEl = document.getElementById('status');
+
+flyBtn.onclick = async ()=>{
+  render();
+  const dataUrl = pc.toDataURL('image/jpeg', 0.6);   // compressed to keep doc small
+  flyBtn.disabled = true; statusEl.textContent = "Sending to the garden...";
+  try {
+    await addDoc(butterflies, { img: dataUrl, createdAt: serverTimestamp() });
+    statusEl.textContent = "Off it flies! 🦋";
+    fx.clearRect(0,0,fill.width,fill.height);          // reset for next child
+    render();
+  } catch (err) {
+    console.error(err);
+    statusEl.textContent = "Hmm, couldn't send. Try again.";
+  } finally {
+    flyBtn.disabled = false;
+    setTimeout(()=>{ statusEl.textContent=""; }, 2500);
+  }
+};
+</script>
+</body>
+</html>
