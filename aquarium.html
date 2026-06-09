@@ -115,6 +115,13 @@ onSnapshot(
   }
 );
 
+function getFacingFlip(animal) {
+  if (animal === "jellyfish") return 1;
+  if (animal === "shark") return -1;
+  if (animal === "turtle") return -1;
+  return 1;
+}
+
 function spawn(dataUrl, animal) {
   const img = new Image();
 
@@ -124,6 +131,7 @@ function spawn(dataUrl, animal) {
     swimmers.push({
       img,
       animal,
+      facingFlip: getFacingFlip(animal),
       x: animal === "jellyfish"
         ? Math.random() * AW * 0.6 + AW * 0.2
         : direction === 1
@@ -195,8 +203,6 @@ function drawAquariumBg() {
     ax.stroke();
   }
 
-  ax.fillStyle = "rgba(255,255,255,.25)";
-
   for (const b of bubbles) {
     ax.globalAlpha = b.alpha;
     ax.beginPath();
@@ -247,12 +253,12 @@ function drawSwimmer(s) {
     ax.scale(s.scale, s.scale * (0.92 + Math.sin(s.wobble) * 0.06));
     ax.drawImage(s.img, -160, -150, 320, 300);
   } else {
-    const facingLeft = s.vx < 0;
+    const flip = s.facingFlip;
 
-    if (facingLeft) {
-      ax.scale(s.scale, s.scale);
-    } else {
+    if (flip < 0) {
       ax.scale(-s.scale, s.scale);
+    } else {
+      ax.scale(s.scale, s.scale);
     }
 
     ax.rotate(Math.sin(s.wobble) * 0.04);
