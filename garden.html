@@ -3,23 +3,43 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Butterfly Garden</title>
+<title>Garden</title>
+
 <style>
   * { box-sizing: border-box; }
-  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #56ab2f; cursor: none; }
-  #gardenCanvas { width: 100vw; height: 100vh; display: block; }
+
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #56ab2f;
+    cursor: none;
+  }
+
+  #gardenCanvas {
+    width: 100vw;
+    height: 100vh;
+    display: block;
+  }
 </style>
 </head>
+
 <body>
 <canvas id="gardenCanvas"></canvas>
 
 <script type="module">
-/* ================== FIREBASE ================== */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, query, where, orderBy, onSnapshot, Timestamp }
-  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  Timestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* ===== PASTE FIREBASE CONFIG HERE (same as paint.html) ===== */
 const firebaseConfig = {
   apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
   authDomain: "teamdennisontracker.firebaseapp.com",
@@ -28,117 +48,212 @@ const firebaseConfig = {
   messagingSenderId: "915336870349",
   appId: "1:915336870349:web:c070e9b3fc0b688fe62c84"
 };
-/* =========================================================== */
 
 const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
+const db = getFirestore(app);
 
-/* ================== GARDEN CANVAS ================== */
 const gc = document.getElementById('gardenCanvas');
 const gx = gc.getContext('2d');
-let GW, GH, DPR;
 
-/* Scale the canvas backing store to the full window AND account for the
-   device pixel ratio so it's crisp on high-res / projector displays. */
+let GW;
+let GH;
+let DPR;
+
 function resizeGarden(){
   DPR = window.devicePixelRatio || 1;
   GW = gc.clientWidth;
   GH = gc.clientHeight;
-  gc.width  = Math.round(GW * DPR);
+
+  gc.width = Math.round(GW * DPR);
   gc.height = Math.round(GH * DPR);
-  gx.setTransform(DPR,0,0,DPR,0,0);   // draw in CSS pixels, render at DPR
+
+  gx.setTransform(DPR, 0, 0, DPR, 0, 0);
 }
+
 window.addEventListener('resize', resizeGarden);
 resizeGarden();
 
-const flyers = [];
-const seen = new Set();           // doc IDs we've already spawned
-const LIFETIME_MS = 90000;        // butterfly lives 90s, then fades out
+const creatures = [];
+const seen = new Set();
+const LIFETIME_MS = 90000;
 
-/* Only listen for butterflies created in the last 2 minutes, newest first.
-   This keeps the projector from re-spawning the whole history on load. */
 const since = Timestamp.fromMillis(Date.now() - 120000);
+
 const q = query(
-  collection(db, "butterflies"),
+  collection(db, "creatures"),
+  where("habitat", "==", "garden"),
   where("createdAt", ">", since),
   orderBy("createdAt")
 );
 
-onSnapshot(q, (snap)=>{
-  snap.docChanges().forEach(change=>{
+onSnapshot(q, (snap) => {
+  snap.docChanges().forEach(change => {
     if (change.type === "added" && !seen.has(change.doc.id)) {
       seen.add(change.doc.id);
-      spawn(change.doc.data().img);
+      const data = change.doc.data();
+      spawn(data.img, data.animal || "butterfly");
     }
   });
 });
 
-function spawn(dataUrl){
+function spawn(dataUrl, animal){
   const img = new Image();
   img.src = dataUrl;
-  img.onload = ()=>{
-    flyers.push({
+
+  img.onload = () => {
+    const isFrog = animal === "frog";
+    const isLadybird = animal === "ladybird";
+
+    creatures.push({
       img,
-      x: Math.random()*GW*0.8+GW*0.1,
-      y: Math.random()*GH*0.8+GH*0.1,
-      vx:(Math.random()-0.5)*1.6, vy:(Math.random()-0.5)*1.6,
-      flap:Math.random()*Math.PI*2,
-      scale:0.6+Math.random()*0.4,
+      animal,
+      x: Math.random() * GW * 0.8 + GW * 0.1,
+      y: isFrog || isLadybird
+        ? GH - Math.random() * 180 - 80
+        : Math.random() * GH * 0.7 + GH * 0.1,
+      vx: (Math.random() - 0.5) * (isFrog || isLadybird ? 0.8 : 1.6),
+      vy: (Math.random() - 0.5) * (isFrog || isLadybird ? 0.4 : 1.6),
+      wobble: Math.random() * Math.PI * 2,
+      scale: 0.5 + Math.random() * 0.45,
       born: performance.now(),
       alpha: 0
     });
   };
 }
 
-/* ================== BACKGROUND ================== */
 function drawGardenBg(){
-  let g=gx.createLinearGradient(0,0,0,GH);
-  g.addColorStop(0,"#aee571"); g.addColorStop(1,"#56ab2f");
-  gx.fillStyle=g; gx.fillRect(0,0,GW,GH);
+  const g = gx.createLinearGradient(0, 0, 0, GH);
+  g.addColorStop(0, "#aee571");
+  g.addColorStop(1, "#56ab2f");
+
+  gx.fillStyle = g;
+  gx.fillRect(0, 0, GW, GH);
+
   gx.save();
-  const cols=["#ff5252","#ffeb3b","#e040fb","#40c4ff"];
-  for(let i=0;i<10;i++){
-    const fxp=(i*167%GW), fyp=GH-30-(i*61%120);
-    gx.strokeStyle="#2e7d32"; gx.lineWidth=4;
-    gx.beginPath(); gx.moveTo(fxp,GH); gx.lineTo(fxp,fyp); gx.stroke();
-    gx.fillStyle=cols[i%cols.length];
-    for(let p=0;p<5;p++){ const a=p/5*Math.PI*2;
-      gx.beginPath(); gx.arc(fxp+Math.cos(a)*11,fyp+Math.sin(a)*11,7,0,Math.PI*2); gx.fill(); }
-    gx.fillStyle="#fff"; gx.beginPath(); gx.arc(fxp,fyp,6,0,Math.PI*2); gx.fill();
+
+  const cols = ["#ff5252", "#ffeb3b", "#e040fb", "#40c4ff"];
+
+  for (let i = 0; i < 14; i++) {
+    const fxp = (i * 167) % GW;
+    const fyp = GH - 30 - ((i * 61) % 140);
+
+    gx.strokeStyle = "#2e7d32";
+    gx.lineWidth = 4;
+
+    gx.beginPath();
+    gx.moveTo(fxp, GH);
+    gx.lineTo(fxp, fyp);
+    gx.stroke();
+
+    gx.fillStyle = cols[i % cols.length];
+
+    for (let p = 0; p < 5; p++) {
+      const a = p / 5 * Math.PI * 2;
+      gx.beginPath();
+      gx.arc(fxp + Math.cos(a) * 11, fyp + Math.sin(a) * 11, 7, 0, Math.PI * 2);
+      gx.fill();
+    }
+
+    gx.fillStyle = "#fff";
+    gx.beginPath();
+    gx.arc(fxp, fyp, 6, 0, Math.PI * 2);
+    gx.fill();
   }
+
   gx.restore();
 }
 
-/* ================== ANIMATION LOOP ================== */
+function updateCreature(c){
+  if (c.animal === "frog") {
+    c.wobble += 0.08;
+    c.x += c.vx;
+    c.y += Math.sin(c.wobble) * 0.8;
+
+    if (Math.random() < 0.015) {
+      c.vx = (Math.random() - 0.5) * 4;
+      c.y -= 25;
+    }
+
+    c.y += 0.6;
+
+    if (c.y > GH - 90) c.y = GH - 90;
+  }
+
+  else if (c.animal === "ladybird") {
+    c.wobble += 0.06;
+    c.x += c.vx;
+    c.y += Math.sin(c.wobble) * 0.25;
+  }
+
+  else {
+    c.wobble += 0.25;
+    c.x += c.vx;
+    c.y += c.vy;
+
+    c.vx += (Math.random() - 0.5) * 0.15;
+    c.vy += (Math.random() - 0.5) * 0.15;
+
+    c.vx = Math.max(-2.2, Math.min(2.2, c.vx));
+    c.vy = Math.max(-2.2, Math.min(2.2, c.vy));
+  }
+
+  if (c.x < 50 || c.x > GW - 50) c.vx *= -1;
+  if (c.y < 50 || c.y > GH - 50) c.vy *= -1;
+}
+
+function drawCreature(c){
+  const flap = Math.abs(Math.cos(c.wobble));
+
+  gx.save();
+  gx.globalAlpha = c.alpha;
+  gx.translate(c.x, c.y);
+
+  if (c.animal === "butterfly" || c.animal === "bee") {
+    gx.rotate(Math.atan2(c.vy, c.vx) + Math.PI / 2);
+    gx.scale(c.scale * (0.4 + 0.6 * flap), c.scale);
+  }
+
+  else if (c.animal === "frog") {
+    gx.rotate(Math.sin(c.wobble) * 0.05);
+    gx.scale(c.scale, c.scale);
+  }
+
+  else {
+    gx.rotate(Math.sin(c.wobble) * 0.08);
+    gx.scale(c.scale, c.scale);
+  }
+
+  gx.drawImage(c.img, -160, -150);
+  gx.restore();
+}
+
 function loop(now){
   drawGardenBg();
-  for(let i=flyers.length-1;i>=0;i--){
-    const b=flyers[i];
-    const age = now - b.born;
 
-    // fade in over 1s, fade out over last 2s
-    if (age < 1000) b.alpha = age/1000;
-    else if (age > LIFETIME_MS - 2000) b.alpha = Math.max(0,(LIFETIME_MS-age)/2000);
-    else b.alpha = 1;
-    if (age > LIFETIME_MS){ flyers.splice(i,1); continue; }
+  for (let i = creatures.length - 1; i >= 0; i--) {
+    const c = creatures[i];
+    const age = now - c.born;
 
-    b.x+=b.vx; b.y+=b.vy; b.flap+=0.25;
-    b.vx+=(Math.random()-0.5)*0.15; b.vy+=(Math.random()-0.5)*0.15;
-    b.vx=Math.max(-2.2,Math.min(2.2,b.vx)); b.vy=Math.max(-2.2,Math.min(2.2,b.vy));
-    if(b.x<50||b.x>GW-50) b.vx*=-1;
-    if(b.y<50||b.y>GH-50) b.vy*=-1;
+    if (age < 1000) {
+      c.alpha = age / 1000;
+    } else if (age > LIFETIME_MS - 2000) {
+      c.alpha = Math.max(0, (LIFETIME_MS - age) / 2000);
+    } else {
+      c.alpha = 1;
+    }
 
-    const flap=Math.abs(Math.cos(b.flap));
-    gx.save();
-    gx.globalAlpha = b.alpha;
-    gx.translate(b.x,b.y);
-    gx.rotate(Math.atan2(b.vy,b.vx)+Math.PI/2);
-    gx.scale(b.scale*(0.4+0.6*flap), b.scale);
-    gx.drawImage(b.img,-160,-150);   // image is 320x300
-    gx.restore();
+    if (age > LIFETIME_MS) {
+      creatures.splice(i, 1);
+      continue;
+    }
+
+    updateCreature(c);
+    drawCreature(c);
   }
+
   requestAnimationFrame(loop);
 }
+
 requestAnimationFrame(loop);
 </script>
 </body>
