@@ -3,50 +3,337 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Paint a Butterfly</title>
+<title>Paint an Animal</title>
+
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; height: 100%; overflow: hidden; font-family: "Comic Sans MS", "Segoe UI", sans-serif; background: #f4f1e0; }
-  #paintPanel { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2vmin; }
-  h1 { font-size: clamp(1.2em, 3.5vmin, 2.6em); color: #33691e; margin: 1vmin 0; text-align: center; }
-  #paintWrap { position: relative; touch-action: none; }
-  #paintCanvas { background: #fff; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,.2); display: block; }
-  #palette { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5vmin; margin: 2vmin 0 1vmin; max-width: 90vmin; }
-  .swatch { width: 6vmin; height: 6vmin; min-width: 36px; min-height: 36px; max-width: 60px; max-height: 60px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,.3); cursor: pointer; }
-  .swatch.active { border-color: #333; transform: scale(1.18); }
-  #brushRow { display: flex; align-items: center; gap: 2vmin; margin: 1vmin 0 2vmin; }
-  #brushRow label { font-size: clamp(.9em, 2.2vmin, 1.4em); color: #555; }
-  #brushSize { width: 40vmin; max-width: 320px; }
-  #brushPreview { width: 7vmin; height: 7vmin; max-width: 56px; max-height: 56px; display: flex; align-items: center; justify-content: center; }
-  #brushPreview div { background: #333; border-radius: 50%; }
-  #flyBtn { font-size: clamp(1.1em, 3vmin, 2em); font-weight: bold; color: #fff; background: #ff7043; border: none;
-            padding: 2vmin 5vmin; border-radius: 40px; box-shadow: 0 4px 0 #d84315; cursor: pointer; }
-  #flyBtn:active { transform: translateY(3px); box-shadow: 0 1px 0 #d84315; }
-  #flyBtn:disabled { opacity: .5; }
-  #status { height: 3vmin; font-size: clamp(.8em, 2vmin, 1.2em); color: #777; margin-top: 1vmin; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: "Comic Sans MS", "Segoe UI", sans-serif;
+    background: #f4f1e0;
+  }
+
+  #paintPanel {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2vmin;
+  }
+
+  h1 {
+    font-size: clamp(1.1em, 3.2vmin, 2.4em);
+    color: #33691e;
+    margin: 1vmin 0;
+    text-align: center;
+  }
+
+  #topControls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1vmin;
+    margin-bottom: 1vmin;
+  }
+
+  select, button, input {
+    font-family: inherit;
+  }
+
+  select {
+    font-size: clamp(.9em, 2vmin, 1.2em);
+    padding: .7vmin 1.2vmin;
+    border-radius: 12px;
+    border: 2px solid #b7b7b7;
+    background: #fff;
+  }
+
+  #paintWrap {
+    position: relative;
+    touch-action: none;
+  }
+
+  #paintCanvas {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.2);
+    display: block;
+  }
+
+  #palette {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5vmin;
+    margin: 2vmin 0 1vmin;
+    max-width: 90vmin;
+  }
+
+  .swatch {
+    width: 6vmin;
+    height: 6vmin;
+    min-width: 36px;
+    min-height: 36px;
+    max-width: 60px;
+    max-height: 60px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,.3);
+    cursor: pointer;
+  }
+
+  .swatch.active {
+    border-color: #333;
+    transform: scale(1.18);
+  }
+
+  #brushRow {
+    display: flex;
+    align-items: center;
+    gap: 2vmin;
+    margin: 1vmin 0 2vmin;
+  }
+
+  #brushRow label {
+    font-size: clamp(.9em, 2.2vmin, 1.4em);
+    color: #555;
+  }
+
+  #brushSize {
+    width: 40vmin;
+    max-width: 320px;
+  }
+
+  #brushPreview {
+    width: 7vmin;
+    height: 7vmin;
+    max-width: 56px;
+    max-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #brushPreview div {
+    background: #333;
+    border-radius: 50%;
+  }
+
+  #sendBtn {
+    font-size: clamp(1.1em, 3vmin, 2em);
+    font-weight: bold;
+    color: #fff;
+    background: #ff7043;
+    border: none;
+    padding: 2vmin 5vmin;
+    border-radius: 40px;
+    box-shadow: 0 4px 0 #d84315;
+    cursor: pointer;
+  }
+
+  #sendBtn:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 #d84315;
+  }
+
+  #sendBtn:disabled {
+    opacity: .5;
+  }
+
+  #status {
+    height: 3vmin;
+    font-size: clamp(.8em, 2vmin, 1.2em);
+    color: #777;
+    margin-top: 1vmin;
+  }
+
+  #adminToggle {
+    position: fixed;
+    right: 10px;
+    bottom: 10px;
+    font-size: 13px;
+    padding: 8px 12px;
+    border-radius: 18px;
+    border: none;
+    background: rgba(0,0,0,.55);
+    color: #fff;
+    cursor: pointer;
+    z-index: 20;
+  }
+
+  #adminPanel {
+    display: none;
+    position: fixed;
+    inset: 3vmin;
+    background: rgba(255,255,255,.96);
+    z-index: 30;
+    border-radius: 18px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.35);
+    padding: 18px;
+    overflow: auto;
+    font-family: "Segoe UI", sans-serif;
+  }
+
+  #adminPanel h2 {
+    margin-top: 0;
+    color: #333;
+  }
+
+  .adminRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 12px 0;
+    align-items: center;
+  }
+
+  .adminRow button {
+    padding: 10px 14px;
+    border: none;
+    border-radius: 10px;
+    background: #455a64;
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .adminRow button.danger {
+    background: #c62828;
+  }
+
+  .adminRow button.good {
+    background: #2e7d32;
+  }
+
+  #adminList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .adminCard {
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background: #fafafa;
+    padding: 8px;
+    text-align: center;
+  }
+
+  .adminCard img {
+    width: 100%;
+    height: 100px;
+    object-fit: contain;
+    background: #fff;
+    border-radius: 8px;
+  }
+
+  .adminCard small {
+    display: block;
+    color: #555;
+    margin: 4px 0 8px;
+  }
+
+  .adminCard button {
+    width: 100%;
+    margin-top: 4px;
+    padding: 7px;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    background: #1976d2;
+    cursor: pointer;
+  }
+
+  .adminCard button.danger {
+    background: #c62828;
+  }
 </style>
 </head>
+
 <body>
+
 <div id="paintPanel">
-  <h1>Paint your butterfly, then let it fly!</h1>
-  <div id="paintWrap"><canvas id="paintCanvas" width="320" height="300"></canvas></div>
+  <h1 id="titleText">Paint your butterfly, then let it fly!</h1>
+
+  <div id="topControls">
+    <select id="animalSelect">
+      <optgroup label="Garden">
+        <option value="butterfly">Butterfly</option>
+        <option value="ladybird">Ladybird</option>
+        <option value="bee">Bee</option>
+        <option value="frog">Frog</option>
+      </optgroup>
+      <optgroup label="Aquarium">
+        <option value="fish">Fish</option>
+        <option value="turtle">Turtle</option>
+        <option value="jellyfish">Jellyfish</option>
+        <option value="shark">Shark</option>
+      </optgroup>
+    </select>
+  </div>
+
+  <div id="paintWrap">
+    <canvas id="paintCanvas" width="320" height="300"></canvas>
+  </div>
+
   <div id="palette"></div>
+
   <div id="brushRow">
     <label for="brushSize">Brush</label>
     <input type="range" id="brushSize" min="6" max="40" value="16">
     <div id="brushPreview"><div></div></div>
   </div>
-  <button id="flyBtn">Fly away! 🦋</button>
+
+  <button id="sendBtn">Send away! 🦋</button>
   <div id="status"></div>
+</div>
+
+<button id="adminToggle">Admin</button>
+
+<div id="adminPanel">
+  <h2>Admin Area</h2>
+
+  <div id="pinArea" class="adminRow">
+    <input id="adminPin" type="password" placeholder="PIN">
+    <button id="unlockAdmin">Unlock</button>
+    <button id="closeAdmin">Close</button>
+  </div>
+
+  <div id="adminTools" style="display:none;">
+    <div class="adminRow">
+      <button id="loadRecent" class="good">Load recent drawings</button>
+      <button id="deleteGarden" class="danger">Delete garden drawings</button>
+      <button id="deleteAquarium" class="danger">Delete aquarium drawings</button>
+      <button id="deleteAll" class="danger">Delete ALL drawings</button>
+      <button id="closeAdmin2">Close</button>
+    </div>
+
+    <div id="adminStatus"></div>
+    <div id="adminList"></div>
+  </div>
 </div>
 
 <script type="module">
 /* ================== FIREBASE ================== */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp }
-  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  serverTimestamp,
+  getDocs,
+  deleteDoc,
+  doc,
+  query,
+  where,
+  orderBy,
+  limit
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* ===== PASTE FIREBASE CONFIG HERE ===== */
 const firebaseConfig = {
   apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
   authDomain: "teamdennisontracker.firebaseapp.com",
@@ -55,165 +342,587 @@ const firebaseConfig = {
   messagingSenderId: "915336870349",
   appId: "1:915336870349:web:c070e9b3fc0b688fe62c84"
 };
-/* ====================================== */
 
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
-const butterflies = collection(db, "butterflies");   // collection name
+const creaturesCol = collection(db, "creatures");
 
-/* ================== RESPONSIVE CANVAS SCALING ================== */
+/* ================== SETTINGS ================== */
+const ADMIN_PIN = "1234";
+
+const animalMeta = {
+  butterfly: { label: "butterfly", habitat: "garden", emoji: "🦋", action: "Fly away" },
+  ladybird:  { label: "ladybird",  habitat: "garden", emoji: "🐞", action: "Crawl away" },
+  bee:       { label: "bee",       habitat: "garden", emoji: "🐝", action: "Buzz away" },
+  frog:      { label: "frog",      habitat: "garden", emoji: "🐸", action: "Hop away" },
+  fish:      { label: "fish",      habitat: "aquarium", emoji: "🐟", action: "Swim away" },
+  turtle:    { label: "turtle",    habitat: "aquarium", emoji: "🐢", action: "Swim away" },
+  jellyfish: { label: "jellyfish", habitat: "aquarium", emoji: "🪼", action: "Float away" },
+  shark:     { label: "shark",     habitat: "aquarium", emoji: "🦈", action: "Swim away" }
+};
+
+let currentAnimal = "butterfly";
+
+/* ================== CANVAS ================== */
 const pc = document.getElementById('paintCanvas');
 const px = pc.getContext('2d');
 
-/* The internal drawing resolution stays 320x300 so all the maths below
-   (centre at 160,150 etc.) is unchanged. We only scale the CSS size. */
+const fill = document.createElement('canvas');
+fill.width = pc.width;
+fill.height = pc.height;
+const fx = fill.getContext('2d');
+
 function fitCanvas(){
   const panel = document.getElementById('paintPanel');
   const others = panel.clientHeight
     - document.querySelector('h1').offsetHeight
+    - document.getElementById('topControls').offsetHeight
     - document.getElementById('palette').offsetHeight
     - document.getElementById('brushRow').offsetHeight
-    - document.getElementById('flyBtn').offsetHeight
+    - document.getElementById('sendBtn').offsetHeight
     - document.getElementById('status').offsetHeight
-    - 60; // padding/margins headroom
+    - 70;
+
   const maxH = Math.max(150, others);
   const maxW = panel.clientWidth - 24;
-  // keep 320:300 aspect ratio, fit within available space
-  const ratio = 320/300;
-  let w = maxW, h = w/ratio;
-  if (h > maxH){ h = maxH; w = h*ratio; }
-  pc.style.width  = w + 'px';
+  const ratio = 320 / 300;
+
+  let w = maxW;
+  let h = w / ratio;
+
+  if (h > maxH) {
+    h = maxH;
+    w = h * ratio;
+  }
+
+  pc.style.width = w + 'px';
   pc.style.height = h + 'px';
 }
+
 window.addEventListener('resize', fitCanvas);
 
 /* ================== PALETTE ================== */
-const colours = ["#e53935","#fb8c00","#fdd835","#43a047","#1e88e5",
-                 "#8e24aa","#ec407a","#00acc1","#6d4c41","#000000","#ffffff"];
+const colours = [
+  "#e53935",
+  "#fb8c00",
+  "#fdd835",
+  "#43a047",
+  "#1e88e5",
+  "#8e24aa",
+  "#ec407a",
+  "#00acc1",
+  "#6d4c41",
+  "#000000",
+  "#ffffff"
+];
+
 let currentColour = colours[5];
+
 const palette = document.getElementById('palette');
-colours.forEach((c)=>{
+
+colours.forEach((c) => {
   const s = document.createElement('div');
-  s.className = 'swatch' + (c===currentColour ? ' active':'');
+  s.className = 'swatch' + (c === currentColour ? ' active' : '');
   s.style.background = c;
-  s.onclick = ()=>{
+
+  s.onclick = () => {
     currentColour = c;
-    document.querySelectorAll('.swatch').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.swatch').forEach(x => x.classList.remove('active'));
     s.classList.add('active');
     updateBrushPreview();
   };
+
   palette.appendChild(s);
 });
 
-/* ================== BRUSH SIZE ================== */
+/* ================== BRUSH ================== */
 const brushSizeEl = document.getElementById('brushSize');
 const brushPrev = document.querySelector('#brushPreview div');
 let brushSize = Number(brushSizeEl.value);
+
 function updateBrushPreview(){
-  brushPrev.style.width  = brushSize + 'px';
+  brushPrev.style.width = brushSize + 'px';
   brushPrev.style.height = brushSize + 'px';
-  brushPrev.style.background = (currentColour === '#ffffff') ? '#ccc' : currentColour;
+  brushPrev.style.background = currentColour === '#ffffff' ? '#ccc' : currentColour;
 }
-brushSizeEl.addEventListener('input', ()=>{
+
+brushSizeEl.addEventListener('input', () => {
   brushSize = Number(brushSizeEl.value);
   updateBrushPreview();
 });
 
-/* ================== BUTTERFLY DRAWING ================== */
-function butterflyPath(ctx){
-  const cx=160, cy=150;
+/* ================== CREATURE PATHS ================== */
+function creaturePath(ctx){
+  const cx = 160;
+  const cy = 150;
+
   ctx.beginPath();
-  ctx.moveTo(cx,cy);
-  ctx.bezierCurveTo(cx-90,cy-110, cx-150,cy-60, cx-60,cy-10);
-  ctx.bezierCurveTo(cx-30,cy-5, cx-15,cy-10, cx,cy);
-  ctx.moveTo(cx,cy);
-  ctx.bezierCurveTo(cx-50,cy+20, cx-110,cy+40, cx-70,cy+95);
-  ctx.bezierCurveTo(cx-40,cy+115, cx-15,cy+60, cx,cy+10);
-  ctx.moveTo(cx,cy);
-  ctx.bezierCurveTo(cx+90,cy-110, cx+150,cy-60, cx+60,cy-10);
-  ctx.bezierCurveTo(cx+30,cy-5, cx+15,cy-10, cx,cy);
-  ctx.moveTo(cx,cy);
-  ctx.bezierCurveTo(cx+50,cy+20, cx+110,cy+40, cx+70,cy+95);
-  ctx.bezierCurveTo(cx+40,cy+115, cx+15,cy+60, cx,cy+10);
-}
 
-const fill = document.createElement('canvas');
-fill.width = pc.width; fill.height = pc.height;
-const fx = fill.getContext('2d');
-
-function drawBody(ctx){
-  const cx=160, cy=150;
-  ctx.fillStyle = "#333";
-  ctx.beginPath(); ctx.ellipse(cx,cy+25,9,55,0,0,Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(cx,cy-30,12,0,Math.PI*2); ctx.fill();
-  ctx.lineWidth=3; ctx.strokeStyle="#333";
-  ctx.beginPath(); ctx.moveTo(cx-3,cy-38); ctx.quadraticCurveTo(cx-22,cy-70,cx-30,cy-72); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(cx+3,cy-38); ctx.quadraticCurveTo(cx+22,cy-70,cx+30,cy-72); ctx.stroke();
-}
-
-/* render() now takes a flag. For the on-screen canvas we paint a white
-   background so the child can see what they're doing. For the EXPORT we
-   skip the white fill so the saved PNG is transparent outside the wings. */
-function render(forExport=false){
-  px.clearRect(0,0,pc.width,pc.height);
-  if(!forExport){
-    px.fillStyle="#fff"; px.fillRect(0,0,pc.width,pc.height);
+  if (currentAnimal === "butterfly") {
+    ctx.moveTo(cx,cy);
+    ctx.bezierCurveTo(cx-90,cy-110, cx-150,cy-60, cx-60,cy-10);
+    ctx.bezierCurveTo(cx-30,cy-5, cx-15,cy-10, cx,cy);
+    ctx.moveTo(cx,cy);
+    ctx.bezierCurveTo(cx-50,cy+20, cx-110,cy+40, cx-70,cy+95);
+    ctx.bezierCurveTo(cx-40,cy+115, cx-15,cy+60, cx,cy+10);
+    ctx.moveTo(cx,cy);
+    ctx.bezierCurveTo(cx+90,cy-110, cx+150,cy-60, cx+60,cy-10);
+    ctx.bezierCurveTo(cx+30,cy-5, cx+15,cy-10, cx,cy);
+    ctx.moveTo(cx,cy);
+    ctx.bezierCurveTo(cx+50,cy+20, cx+110,cy+40, cx+70,cy+95);
+    ctx.bezierCurveTo(cx+40,cy+115, cx+15,cy+60, cx,cy+10);
   }
-  px.drawImage(fill,0,0);
-  px.lineWidth=4; px.strokeStyle="#333";
-  butterflyPath(px); px.stroke();
-  drawBody(px);
+
+  else if (currentAnimal === "ladybird") {
+    ctx.ellipse(cx, cy, 95, 115, 0, 0, Math.PI * 2);
+  }
+
+  else if (currentAnimal === "bee") {
+    ctx.ellipse(cx, cy, 115, 65, 0, 0, Math.PI * 2);
+    ctx.moveTo(cx - 25, cy - 50);
+    ctx.ellipse(cx - 35, cy - 70, 45, 28, -0.5, 0, Math.PI * 2);
+    ctx.moveTo(cx + 25, cy - 50);
+    ctx.ellipse(cx + 35, cy - 70, 45, 28, 0.5, 0, Math.PI * 2);
+  }
+
+  else if (currentAnimal === "frog") {
+    ctx.ellipse(cx, cy + 25, 95, 80, 0, 0, Math.PI * 2);
+    ctx.moveTo(cx - 45, cy - 45);
+    ctx.arc(cx - 45, cy - 45, 28, 0, Math.PI * 2);
+    ctx.moveTo(cx + 45, cy - 45);
+    ctx.arc(cx + 45, cy - 45, 28, 0, Math.PI * 2);
+  }
+
+  else if (currentAnimal === "fish") {
+    ctx.moveTo(45, 150);
+    ctx.quadraticCurveTo(130, 65, 245, 150);
+    ctx.quadraticCurveTo(130, 235, 45, 150);
+    ctx.moveTo(245, 150);
+    ctx.lineTo(300, 95);
+    ctx.lineTo(300, 205);
+    ctx.closePath();
+  }
+
+  else if (currentAnimal === "turtle") {
+    ctx.ellipse(cx, cy, 95, 70, 0, 0, Math.PI * 2);
+    ctx.moveTo(cx + 95, cy);
+    ctx.arc(cx + 125, cy, 28, 0, Math.PI * 2);
+    ctx.moveTo(cx - 60, cy - 55);
+    ctx.ellipse(cx - 80, cy - 75, 30, 18, -0.5, 0, Math.PI * 2);
+    ctx.moveTo(cx - 60, cy + 55);
+    ctx.ellipse(cx - 80, cy + 75, 30, 18, 0.5, 0, Math.PI * 2);
+  }
+
+  else if (currentAnimal === "jellyfish") {
+    ctx.moveTo(cx - 85, cy - 10);
+    ctx.bezierCurveTo(cx - 70, cy - 100, cx + 70, cy - 100, cx + 85, cy - 10);
+    ctx.quadraticCurveTo(cx + 55, cy + 25, cx + 25, cy - 5);
+    ctx.quadraticCurveTo(cx, cy + 30, cx - 25, cy - 5);
+    ctx.quadraticCurveTo(cx - 55, cy + 25, cx - 85, cy - 10);
+  }
+
+  else if (currentAnimal === "shark") {
+    ctx.moveTo(35, 160);
+    ctx.quadraticCurveTo(145, 55, 285, 135);
+    ctx.quadraticCurveTo(155, 230, 35, 160);
+    ctx.moveTo(120, 95);
+    ctx.lineTo(150, 35);
+    ctx.lineTo(175, 105);
+    ctx.moveTo(40, 160);
+    ctx.lineTo(10, 105);
+    ctx.lineTo(15, 215);
+    ctx.closePath();
+  }
+}
+
+function drawCreatureDetails(ctx){
+  const cx = 160;
+  const cy = 150;
+
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = "#333";
+  ctx.fillStyle = "#333";
+
+  if (currentAnimal === "butterfly") {
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 25, 9, 55, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy - 30, 12, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(cx - 3, cy - 38);
+    ctx.quadraticCurveTo(cx - 22, cy - 70, cx - 30, cy - 72);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(cx + 3, cy - 38);
+    ctx.quadraticCurveTo(cx + 22, cy - 70, cx + 30, cy - 72);
+    ctx.stroke();
+  }
+
+  if (currentAnimal === "ladybird") {
+    ctx.beginPath();
+    ctx.arc(cx, cy - 95, 35, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - 110);
+    ctx.lineTo(cx, cy + 105);
+    ctx.stroke();
+
+    for (const p of [[-35,-35],[35,-35],[-45,25],[45,25],[-20,70],[20,70]]) {
+      ctx.beginPath();
+      ctx.arc(cx + p[0], cy + p[1], 12, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  if (currentAnimal === "bee") {
+    ctx.lineWidth = 14;
+    for (let x = 105; x <= 210; x += 38) {
+      ctx.beginPath();
+      ctx.moveTo(x, cy - 55);
+      ctx.lineTo(x, cy + 55);
+      ctx.stroke();
+    }
+
+    ctx.beginPath();
+    ctx.arc(235, cy - 15, 7, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  if (currentAnimal === "frog") {
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(cx - 45, cy - 48, 12, 0, Math.PI * 2);
+    ctx.arc(cx + 45, cy - 48, 12, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#333";
+    ctx.beginPath();
+    ctx.arc(cx - 45, cy - 48, 6, 0, Math.PI * 2);
+    ctx.arc(cx + 45, cy - 48, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy + 25, 38, 0.15, Math.PI - 0.15);
+    ctx.stroke();
+  }
+
+  if (currentAnimal === "fish") {
+    ctx.beginPath();
+    ctx.arc(210, 135, 7, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(95, 150);
+    ctx.quadraticCurveTo(125, 120, 155, 150);
+    ctx.quadraticCurveTo(125, 180, 95, 150);
+    ctx.stroke();
+  }
+
+  if (currentAnimal === "turtle") {
+    ctx.beginPath();
+    ctx.arc(cx + 132, cy - 7, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, 55, 38, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(cx - 55, cy);
+    ctx.lineTo(cx + 55, cy);
+    ctx.moveTo(cx, cy - 38);
+    ctx.lineTo(cx, cy + 38);
+    ctx.stroke();
+  }
+
+  if (currentAnimal === "jellyfish") {
+    ctx.lineWidth = 4;
+    for (let i = -45; i <= 45; i += 30) {
+      ctx.beginPath();
+      ctx.moveTo(cx + i, cy + 10);
+      ctx.bezierCurveTo(cx + i - 20, cy + 55, cx + i + 20, cy + 85, cx + i, cy + 125);
+      ctx.stroke();
+    }
+  }
+
+  if (currentAnimal === "shark") {
+    ctx.beginPath();
+    ctx.arc(230, 130, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(205, 165);
+    ctx.lineTo(245, 165);
+    ctx.stroke();
+  }
+}
+
+function render(forExport = false){
+  px.clearRect(0, 0, pc.width, pc.height);
+
+  if (!forExport) {
+    px.fillStyle = "#fff";
+    px.fillRect(0, 0, pc.width, pc.height);
+  }
+
+  px.drawImage(fill, 0, 0);
+
+  px.lineWidth = 4;
+  px.strokeStyle = "#333";
+  creaturePath(px);
+  px.stroke();
+
+  drawCreatureDetails(px);
 }
 
 /* ================== PAINTING ================== */
-let painting=false;
-function paintAt(x,y){
-  fx.save(); butterflyPath(fx); fx.clip();
-  fx.fillStyle=currentColour;
-  fx.beginPath(); fx.arc(x,y,brushSize,0,Math.PI*2); fx.fill();
-  fx.restore(); render();
-}
-function pos(e){
-  const r=pc.getBoundingClientRect();
-  const t = e.touches ? e.touches[0] : e;
-  return { x:(t.clientX-r.left)*(pc.width/r.width), y:(t.clientY-r.top)*(pc.height/r.height) };
-}
-function down(e){ painting=true; const p=pos(e); paintAt(p.x,p.y); e.preventDefault(); }
-function move(e){ if(painting){ const p=pos(e); paintAt(p.x,p.y); e.preventDefault(); } }
-function up(){ painting=false; }
-pc.addEventListener('mousedown',down); pc.addEventListener('mousemove',move);
-window.addEventListener('mouseup',up);
-pc.addEventListener('touchstart',down,{passive:false});
-pc.addEventListener('touchmove',move,{passive:false});
-pc.addEventListener('touchend',up);
+let painting = false;
 
-/* ================== FLY AWAY (write to Firestore) ================== */
-const flyBtn = document.getElementById('flyBtn');
+function paintAt(x, y){
+  fx.save();
+  creaturePath(fx);
+  fx.clip();
+
+  fx.fillStyle = currentColour;
+  fx.beginPath();
+  fx.arc(x, y, brushSize, 0, Math.PI * 2);
+  fx.fill();
+
+  fx.restore();
+  render();
+}
+
+function pos(e){
+  const r = pc.getBoundingClientRect();
+  const t = e.touches ? e.touches[0] : e;
+
+  return {
+    x: (t.clientX - r.left) * (pc.width / r.width),
+    y: (t.clientY - r.top) * (pc.height / r.height)
+  };
+}
+
+function down(e){
+  painting = true;
+  const p = pos(e);
+  paintAt(p.x, p.y);
+  e.preventDefault();
+}
+
+function move(e){
+  if (painting) {
+    const p = pos(e);
+    paintAt(p.x, p.y);
+    e.preventDefault();
+  }
+}
+
+function up(){
+  painting = false;
+}
+
+pc.addEventListener('mousedown', down);
+pc.addEventListener('mousemove', move);
+window.addEventListener('mouseup', up);
+
+pc.addEventListener('touchstart', down, { passive:false });
+pc.addEventListener('touchmove', move, { passive:false });
+pc.addEventListener('touchend', up);
+
+/* ================== ANIMAL CHANGE ================== */
+const animalSelect = document.getElementById('animalSelect');
+const titleText = document.getElementById('titleText');
+const sendBtn = document.getElementById('sendBtn');
+
+function updateAnimalText(){
+  const m = animalMeta[currentAnimal];
+  titleText.textContent = `Paint your ${m.label}, then send it away!`;
+  sendBtn.textContent = `${m.action}! ${m.emoji}`;
+}
+
+animalSelect.addEventListener('change', () => {
+  currentAnimal = animalSelect.value;
+  fx.clearRect(0, 0, fill.width, fill.height);
+  updateAnimalText();
+  render();
+});
+
+/* ================== SEND TO FIRESTORE ================== */
 const statusEl = document.getElementById('status');
 
-flyBtn.onclick = async ()=>{
-  render(true);                                      // transparent export render
-  const dataUrl = pc.toDataURL('image/png');         // PNG keeps transparency
-  render();                                          // restore white-bg view
-  flyBtn.disabled = true; statusEl.textContent = "Sending to the garden...";
+sendBtn.onclick = async () => {
+  const meta = animalMeta[currentAnimal];
+
+  render(true);
+  const dataUrl = pc.toDataURL('image/png');
+  render();
+
+  sendBtn.disabled = true;
+  statusEl.textContent = meta.habitat === "garden"
+    ? "Sending to the garden..."
+    : "Sending to the aquarium...";
+
   try {
-    await addDoc(butterflies, { img: dataUrl, createdAt: serverTimestamp() });
-    statusEl.textContent = "Off it flies! 🦋";
-    fx.clearRect(0,0,fill.width,fill.height);          // reset for next child
+    await addDoc(creaturesCol, {
+      img: dataUrl,
+      animal: currentAnimal,
+      habitat: meta.habitat,
+      createdAt: serverTimestamp()
+    });
+
+    statusEl.textContent = `Off it goes! ${meta.emoji}`;
+
+    fx.clearRect(0, 0, fill.width, fill.height);
     render();
+
   } catch (err) {
     console.error(err);
     statusEl.textContent = "Hmm, couldn't send. Try again.";
   } finally {
-    flyBtn.disabled = false;
-    setTimeout(()=>{ statusEl.textContent=""; }, 2500);
+    sendBtn.disabled = false;
+    setTimeout(() => { statusEl.textContent = ""; }, 2500);
   }
 };
+
+/* ================== ADMIN ================== */
+const adminToggle = document.getElementById('adminToggle');
+const adminPanel = document.getElementById('adminPanel');
+const adminPin = document.getElementById('adminPin');
+const unlockAdmin = document.getElementById('unlockAdmin');
+const pinArea = document.getElementById('pinArea');
+const adminTools = document.getElementById('adminTools');
+const adminStatus = document.getElementById('adminStatus');
+const adminList = document.getElementById('adminList');
+
+adminToggle.onclick = () => {
+  adminPanel.style.display = "block";
+};
+
+document.getElementById('closeAdmin').onclick = closeAdmin;
+document.getElementById('closeAdmin2').onclick = closeAdmin;
+
+function closeAdmin(){
+  adminPanel.style.display = "none";
+}
+
+unlockAdmin.onclick = () => {
+  if (adminPin.value === ADMIN_PIN) {
+    pinArea.style.display = "none";
+    adminTools.style.display = "block";
+    adminStatus.textContent = "Admin unlocked.";
+  } else {
+    adminStatus.textContent = "Wrong PIN.";
+  }
+};
+
+async function deleteByQuery(q, label){
+  if (!confirm(`Are you sure you want to delete ${label}?`)) return;
+
+  adminStatus.textContent = "Deleting...";
+  const snap = await getDocs(q);
+
+  const jobs = [];
+  snap.forEach(d => {
+    jobs.push(deleteDoc(doc(db, "creatures", d.id)));
+  });
+
+  await Promise.all(jobs);
+
+  adminStatus.textContent = `Deleted ${jobs.length} drawing(s).`;
+  loadRecentDrawings();
+}
+
+document.getElementById('deleteAll').onclick = async () => {
+  await deleteByQuery(query(creaturesCol), "ALL drawings");
+};
+
+document.getElementById('deleteGarden').onclick = async () => {
+  await deleteByQuery(
+    query(creaturesCol, where("habitat", "==", "garden")),
+    "all garden drawings"
+  );
+};
+
+document.getElementById('deleteAquarium').onclick = async () => {
+  await deleteByQuery(
+    query(creaturesCol, where("habitat", "==", "aquarium")),
+    "all aquarium drawings"
+  );
+};
+
+document.getElementById('loadRecent').onclick = loadRecentDrawings;
+
+async function loadRecentDrawings(){
+  adminStatus.textContent = "Loading recent drawings...";
+  adminList.innerHTML = "";
+
+  const q = query(
+    creaturesCol,
+    orderBy("createdAt", "desc"),
+    limit(30)
+  );
+
+  const snap = await getDocs(q);
+
+  snap.forEach(d => {
+    const data = d.data();
+
+    const card = document.createElement("div");
+    card.className = "adminCard";
+
+    const img = document.createElement("img");
+    img.src = data.img;
+
+    const label = document.createElement("small");
+    label.textContent = `${data.animal || "unknown"} / ${data.habitat || "unknown"}`;
+
+    const respawnBtn = document.createElement("button");
+    respawnBtn.textContent = "Respawn";
+    respawnBtn.onclick = async () => {
+      await addDoc(creaturesCol, {
+        img: data.img,
+        animal: data.animal,
+        habitat: data.habitat,
+        createdAt: serverTimestamp(),
+        respawned: true
+      });
+
+      adminStatus.textContent = "Drawing respawned.";
+    };
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "danger";
+    deleteBtn.textContent = "Delete";
+    deleteBtn.onclick = async () => {
+      if (!confirm("Delete this drawing?")) return;
+      await deleteDoc(doc(db, "creatures", d.id));
+      adminStatus.textContent = "Drawing deleted.";
+      loadRecentDrawings();
+    };
+
+    card.appendChild(img);
+    card.appendChild(label);
+    card.appendChild(respawnBtn);
+    card.appendChild(deleteBtn);
+
+    adminList.appendChild(card);
+  });
+
+  adminStatus.textContent = `Loaded ${snap.size} drawing(s).`;
+}
 
 /* ================== INIT ================== */
 fitCanvas();
 updateBrushPreview();
+updateAnimalText();
 render();
 </script>
+
 </body>
 </html>
