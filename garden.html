@@ -35,9 +35,7 @@ import {
   collection,
   query,
   where,
-  orderBy,
-  onSnapshot,
-  Timestamp
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -52,14 +50,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const gc = document.getElementById('gardenCanvas');
-const gx = gc.getContext('2d');
+const gc = document.getElementById("gardenCanvas");
+const gx = gc.getContext("2d");
 
 let GW;
 let GH;
 let DPR;
 
-function resizeGarden(){
+function resizeGarden() {
   DPR = window.devicePixelRatio || 1;
   GW = gc.clientWidth;
   GH = gc.clientHeight;
@@ -70,35 +68,50 @@ function resizeGarden(){
   gx.setTransform(DPR, 0, 0, DPR, 0, 0);
 }
 
-window.addEventListener('resize', resizeGarden);
+window.addEventListener("resize", resizeGarden);
 resizeGarden();
 
 const creatures = [];
 const seen = new Set();
 const LIFETIME_MS = 90000;
 
-const since = Timestamp.fromMillis(Date.now() - 120000);
-
 const q = query(
   collection(db, "creatures"),
-  where("habitat", "==", "garden"),
-  where("createdAt", ">", since),
-  orderBy("createdAt")
+  where("habitat", "==", "garden")
 );
 
-onSnapshot(q, (snap) => {
-  snap.docChanges().forEach(change => {
-    if (change.type === "added" && !seen.has(change.doc.id)) {
-      seen.add(change.doc.id);
-      const data = change.doc.data();
-      spawn(data.img, data.animal || "butterfly");
-    }
-  });
-});
+onSnapshot(
+  q,
+  (snap) => {
+    console.log("Garden snapshot received. Documents:", snap.size);
 
-function spawn(dataUrl, animal){
+    snap.docChanges().forEach((change) => {
+      if (change.type !== "added") return;
+      if (seen.has(change.doc.id)) return;
+
+      seen.add(change.doc.id);
+
+      const data = change.doc.data();
+
+      console.log("Garden creature found:", change.doc.id, data);
+
+      if (!data.img) {
+        console.warn("Creature skipped because img field is missing:", change.doc.id, data);
+        return;
+      }
+
+      const animal = String(data.animal || "butterfly").toLowerCase().trim();
+
+      spawn(data.img, animal);
+    });
+  },
+  (error) => {
+    console.error("Error listening for garden creatures:", error);
+  }
+);
+
+function spawn(dataUrl, animal) {
   const img = new Image();
-  img.src = dataUrl;
 
   img.onload = () => {
     const isFrog = animal === "frog";
@@ -118,10 +131,18 @@ function spawn(dataUrl, animal){
       born: performance.now(),
       alpha: 0
     });
+
+    console.log("Spawned garden creature:", animal);
   };
+
+  img.onerror = () => {
+    console.error("Failed to load creature image:", animal);
+  };
+
+  img.src = dataUrl;
 }
 
-function drawGardenBg(){
+function drawGardenBg() {
   const g = gx.createLinearGradient(0, 0, 0, GH);
   g.addColorStop(0, "#aee571");
   g.addColorStop(1, "#56ab2f");
@@ -163,7 +184,7 @@ function drawGardenBg(){
   gx.restore();
 }
 
-function updateCreature(c){
+function updateCreature(c) {
   if (c.animal === "frog") {
     c.wobble += 0.08;
     c.x += c.vx;
@@ -201,7 +222,7 @@ function updateCreature(c){
   if (c.y < 50 || c.y > GH - 50) c.vy *= -1;
 }
 
-function drawCreature(c){
+function drawCreature(c) {
   const flap = Math.abs(Math.cos(c.wobble));
 
   gx.save();
@@ -223,11 +244,14 @@ function drawCreature(c){
     gx.scale(c.scale, c.scale);
   }
 
-  gx.drawImage(c.img, -160, -150);
+  const drawWidth = 320;
+  const drawHeight = 300;
+
+  gx.drawImage(c.img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
   gx.restore();
 }
 
-function loop(now){
+function loop(now) {
   drawGardenBg();
 
   for (let i = creatures.length - 1; i >= 0; i--) {
