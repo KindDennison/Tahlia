@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Safari</title>
+
+<style>
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #d4a574;
+    cursor: none;
+  }
+
+  #safariCanvas {
+    width: 100vw;
+    height: 100vh;
+    display: block;
+  }
+</style>
+</head>
+
+<body>
+<canvas id="safariCanvas"></canvas>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
+  authDomain: "teamdennisontracker.firebaseapp.com",
+  projectId: "teamdennisontracker",
+  storageBucket: "teamdennisontracker.firebasestorage.app",
+  messagingSenderId: "915336870349",
+  appId: "1:915336870349:web:c070e9b3fc0b688fe62c84"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const sc = document.getElementById("safariCanvas");
+const sx = sc.getContext("2d");
+
+let SW;
+let SH;
+let DPR;
+
+function resizeSafari() {
+  DPR = window.devicePixelRatio || 1;
+  SW = sc.clientWidth;
+  SH = sc.clientHeight;
+
+  sc.width = Math.round(SW * DPR);
+  sc.height = Math.round(SH * DPR);
+
+  sx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+
+window.addEventListener("resize", resizeSafari);
+resizeSafari();
+
+const creatures = [];
+const seen = new Set();
+const LIFETIME_MS = 90000;
+
+const q = query(
+  collection(db, "creatures"),
+  where("habitat", "==", "safari")
+);
+
+onSnapshot(
+  q,
+  (snap) => {
+    console.log("Safari snapshot received. Documents:", snap.size);
+
+    snap.docChanges().forEach((change) => {
+      if (change.type !== "added") return;
+      if (seen.has(change.doc.id)) return;
+
+      seen.add(change.doc.id);
+
+      const data = change.doc.data();
+
+      console.log("Safari creature found:", change.doc.id, data);
+
+      if (!data.img) {
+        console.warn("Creature skipped because img field is missing:", change.doc.id, data);
+        return;
+      }
+
+      const animal = String(data.animal || "lion").toLowerCase().trim();
+
+      spawn(data.img, animal);
+    });
+  },
+  (error) => {
+    console.error("Error listening for safari creatures:", error);
+  }
+);
+
+function spawn(dataUrl, animal) {
+  const img = new Image();
+
+  img.onload = () => {
+    const isGround = ["lion", "elephant", "giraffe", "zebra", "rhino"].includes(animal);
+    const isBird = ["eagle", "parrot", "flamingo"].includes(animal);
+
+    creatures.push({
+      img,
+      animal,
+      x: Math.random() * SW * 0.8 + SW * 0.1,
+      y: isGround
+        ? SH - Math.random() * 120 - 150
+        : isBird
+          ? Math.random() * SH * 0.4 + SH * 0.05
+          : Math.random() * SH * 0.6 + SH * 0.15,
+      vx: (Math.random() - 0.5) * (isGround ? 1.2 : 2.0),
+      vy: (Math.random() - 0.5) * (isGround ? 0.3 : isBird ? 1.4 : 1.0),
+      wobble: Math.random() * Math.PI * 2,
+      scale: isGround ? 0.6 + Math.random() * 0.5 : 0.45 + Math.random() * 0.4,
+      born: performance.now(),
+      alpha: 0
+    });
+
+    console.log("Spawned safari creature:", animal);
+  };
+
+  img.onerror = () => {
+    console.error("Failed to load creature image:", animal);
+  };
+
+  img.src = dataUrl;
+}
+
+function drawSafariBg() {
+  const g = sx.createLinearGradient(0, 0, 0, SH);
+  g.addColorStop(0, "#ffcc80");
+  g.addColorStop(0.4, "#ff9966");
+  g.addColorStop(1, "#d4a574");
+
+  sx.fillStyle = g;
+  sx.fillRect(0, 0, SW, SH);
+
+  sx.save();
+
+  sx.fillStyle = "#c49a6c";
+  sx.beginPath();
+  sx.moveTo(0, SH - 140);
+
+  for (let x = 0; x <= SW; x += 80) {
+    sx.quadraticCurveTo(x + 40, SH - 165, x + 80, SH - 140);
+  }
+
+  sx.lineTo(SW, SH);
+  sx.lineTo(0, SH);
+  sx.closePath();
+  sx.fill();
+
+  for (let i = 0; i < 8; i++) {
+    const tx = (i * 211) % SW;
+    const ty = SH - 180 - ((i * 43) % 80);
+    const th = 90 + (i * 29) % 70;
+
+    sx.fillStyle = "#6d4c41";
+    sx.fillRect(tx - 8, ty, 16, th);
+
+    sx.fillStyle = i % 2 ? "#66bb6a" : "#81c784";
+
+    sx.beginPath();
+    sx.moveTo(tx, ty - 30);
+    sx.bezierCurveTo(tx - 50, ty - 20, tx - 60, ty + 10, tx - 40, ty + 30);
+    sx.bezierCurveTo(tx - 20, ty + 15, tx, ty, tx, ty - 30);
+    sx.fill();
+
+    sx.beginPath();
+    sx.moveTo(tx, ty - 30);
+    sx.bezierCurveTo(tx + 50, ty - 20, tx + 60, ty + 10, tx + 40, ty + 30);
+    sx.bezierCurveTo(tx + 20, ty + 15, tx, ty, tx, ty - 30);
+    sx.fill();
+  }
+
+  sx.fillStyle = "rgba(255, 223, 128, 0.4)";
+  sx.beginPath();
+  sx.arc(SW * 0.85, SH * 0.15, 60, 0, Math.PI * 2);
+  sx.fill();
+
+  sx.restore();
+}
+
+function updateCreature(c) {
+  const isGround = ["lion", "elephant", "giraffe", "zebra", "rhino"].includes(c.animal);
+  const isBird = ["eagle", "parrot", "flamingo"].includes(c.animal);
+
+  if (isGround) {
+    c.wobble += 0.12;
+    c.x += c.vx;
+    c.y += Math.sin(c.wobble) * 0.6;
+  } else if (isBird) {
+    c.wobble += 0.2;
+    c.x += c.vx;
+    c.y += c.vy;
+
+    c.vx += (Math.random() - 0.5) * 0.15;
+    c.vy += (Math.random() - 0.5) * 0.15;
+
+    c.vx = Math.max(-2.5, Math.min(2.5, c.vx));
+    c.vy = Math.max(-2.0, Math.min(2.0, c.vy));
+  } else {
+    c.wobble += 0.18;
+    c.x += c.vx;
+    c.y += c.vy;
+
+    c.vx += (Math.random() - 0.5) * 0.12;
+    c.vy += (Math.random() - 0.5) * 0.12;
+
+    c.vx = Math.max(-2.0, Math.min(2.0, c.vx));
+    c.vy = Math.max(-1.8, Math.min(1.8, c.vy));
+  }
+
+  if (c.x < 50 || c.x > SW - 50) c.vx *= -1;
+  if (c.y < 50 || c.y > SH - 150) c.vy *= -1;
+}
+
+function drawCreature(c) {
+  const isBird = ["eagle", "parrot", "flamingo"].includes(c.animal);
+  const flap = isBird ? Math.abs(Math.cos(c.wobble)) : 1;
+
+  sx.save();
+  sx.globalAlpha = c.alpha;
+  sx.translate(c.x, c.y);
+
+  if (isBird) {
+    sx.rotate(Math.atan2(c.vy, c.vx) + Math.PI / 2);
+    sx.scale(c.scale * (0.5 + 0.5 * flap), c.scale);
+  } else {
+    sx.rotate(Math.sin(c.wobble) * 0.06);
+    sx.scale(c.scale, c.scale);
+  }
+
+  const drawWidth = 320;
+  const drawHeight = 300;
+
+  sx.drawImage(c.img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+  sx.restore();
+}
+
+function loop(now) {
+  drawSafariBg();
+
+  for (let i = creatures.length - 1; i >= 0; i--) {
+    const c = creatures[i];
+    const age = now - c.born;
+
+    if (age < 1000) {
+      c.alpha = age / 1000;
+    } else if (age > LIFETIME_MS - 2000) {
+      c.alpha = Math.max(0, (LIFETIME_MS - age) / 2000);
+    } else {
+      c.alpha = 1;
+    }
+
+    if (age > LIFETIME_MS) {
+      creatures.splice(i, 1);
+      continue;
+    }
+
+    updateCreature(c);
+    drawCreature(c);
+  }
+
+  requestAnimationFrame(loop);
+}
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
