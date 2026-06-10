@@ -5,14 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Paint App</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+
     :root {
-      --bg: #f4f4f4;
-      --card: #ffffff;
-      --primary: #0055a5;
-      --primary-dark: #003f7f;
-      --text: #333;
-      --muted: #666;
-      --border: #d9d9d9;
+      --primary: #FF6B9D;
+      --primary-light: #FF85B3;
+      --secondary: #4ECDC4;
+      --tertiary: #FFE66D;
+      --accent: #95E1D3;
+      --text: #2C3E50;
+      --bg-light: #FFF9E6;
     }
 
     * {
@@ -20,59 +22,105 @@
     }
 
     body {
-      font-family: Arial, sans-serif;
-      background: var(--bg);
+      font-family: 'Fredoka', sans-serif;
+      background: linear-gradient(135deg, #FFD89B 0%, #FFF9E6 50%, #E0F7FA 100%);
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
       margin: 0;
       padding: 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%;
+      right: -10%;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(255,107,157,0.1) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -20%;
+      left: -5%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(78,205,196,0.1) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
     }
 
     .main-container {
-      background: var(--card);
-      padding: 2.5rem;
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      background: var(--bg-light);
+      padding: 3rem 2.5rem;
+      border-radius: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15), 
+                  inset 0 1px 0 rgba(255,255,255,0.6);
       text-align: center;
-      max-width: 900px;
+      max-width: 950px;
       width: 100%;
-      border: 1px solid var(--border);
+      border: 4px solid var(--tertiary);
+      position: relative;
+      z-index: 1;
     }
 
     .back-link {
       position: absolute;
-      top: 20px;
-      left: 20px;
-      color: var(--primary);
+      top: 25px;
+      left: 25px;
+      background: var(--secondary);
+      color: white;
       text-decoration: none;
-      font-weight: bold;
+      font-weight: 700;
       font-size: 0.95rem;
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 6px;
-      transition: color 0.2s ease;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 25px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(78,205,196,0.3);
     }
 
     .back-link:hover {
-      color: var(--primary-dark);
+      background: var(--secondary);
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(78,205,196,0.4);
+    }
+
+    .header {
+      margin-bottom: 2.5rem;
     }
 
     h1 {
       color: var(--primary);
       margin: 0 0 0.5rem;
-      font-size: 2.25rem;
+      font-size: 3.5rem;
+      font-weight: 700;
+      text-shadow: 2px 2px 4px rgba(255,107,157,0.2);
+      letter-spacing: -1px;
     }
 
     .subtitle {
-      color: var(--muted);
-      margin: 0 0 2rem;
-      font-size: 1.05rem;
+      color: var(--text);
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 600;
+      opacity: 0.85;
     }
 
     .section {
-      margin-bottom: 2.5rem;
+      margin-bottom: 3rem;
     }
 
     .section:last-of-type {
@@ -81,74 +129,156 @@
 
     .section-title {
       color: var(--text);
-      font-size: 1.3rem;
-      margin: 0 0 1rem;
-      font-weight: 600;
+      font-size: 1.6rem;
+      margin: 0 0 1.5rem;
+      font-weight: 700;
+      display: inline-block;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .option-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.25rem;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2rem;
+      margin-top: 1.5rem;
     }
 
     .option-card {
-      background: var(--primary);
-      padding: 2rem 1.5rem;
-      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      padding: 2.5rem 2rem;
+      border-radius: 30px;
       text-decoration: none;
-      color: #fff;
-      font-weight: bold;
-      font-size: 1.1rem;
-      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+      color: white;
+      font-weight: 700;
+      font-size: 1.25rem;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      min-height: 160px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      min-height: 200px;
+      box-shadow: 0 12px 30px rgba(255,107,157,0.3),
+                  inset 0 1px 0 rgba(255,255,255,0.4);
+      border: 3px solid rgba(255,255,255,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .option-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
 
     .option-card:hover {
-      background: var(--primary-dark);
-      transform: translateY(-4px);
-      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+      transform: translateY(-12px) scale(1.05);
+      box-shadow: 0 18px 45px rgba(255,107,157,0.4),
+                  inset 0 1px 0 rgba(255,255,255,0.5);
+    }
+
+    .option-card:hover::before {
+      opacity: 1;
+    }
+
+    .option-card:nth-child(2) {
+      background: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%);
+      box-shadow: 0 12px 30px rgba(78,205,196,0.3),
+                  inset 0 1px 0 rgba(255,255,255,0.4);
+    }
+
+    .option-card:nth-child(2):hover {
+      box-shadow: 0 18px 45px rgba(78,205,196,0.4),
+                  inset 0 1px 0 rgba(255,255,255,0.5);
+    }
+
+    .option-card:nth-child(3) {
+      background: linear-gradient(135deg, #FFB6C1 0%, #FFC0CB 100%);
+      box-shadow: 0 12px 30px rgba(255,182,193,0.3),
+                  inset 0 1px 0 rgba(255,255,255,0.4);
+    }
+
+    .option-card:nth-child(3):hover {
+      box-shadow: 0 18px 45px rgba(255,182,193,0.4),
+                  inset 0 1px 0 rgba(255,255,255,0.5);
+    }
+
+    .option-card:nth-child(4) {
+      background: linear-gradient(135deg, #FFD700 0%, var(--tertiary) 100%);
+      box-shadow: 0 12px 30px rgba(255,215,0,0.3),
+                  inset 0 1px 0 rgba(255,255,255,0.4);
+    }
+
+    .option-card:nth-child(4):hover {
+      box-shadow: 0 18px 45px rgba(255,215,0,0.4),
+                  inset 0 1px 0 rgba(255,255,255,0.5);
     }
 
     .option-card .icon {
-      width: 64px;
-      height: 64px;
-      margin-bottom: 12px;
+      width: 80px;
+      height: 80px;
+      margin-bottom: 16px;
       display: block;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
     }
 
     .divider {
-      height: 1px;
-      background: var(--border);
-      margin: 2rem 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--tertiary), transparent);
+      margin: 2.5rem 0;
+      border-radius: 2px;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 2.5rem;
+      }
+
+      .main-container {
+        padding: 2rem 1.5rem;
+      }
+
+      .option-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+
+      .option-card {
+        min-height: 160px;
+      }
     }
   </style>
 </head>
 <body>
   <a href="index.html" class="back-link">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
       <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
     </svg>
-    Back to Home
+    Back
   </a>
 
   <div class="main-container">
-    <h1>Paint</h1>
-    <p class="subtitle">Create your own creature or explore different habitats</p>
+    <div class="header">
+      <h1>🎨 Paint</h1>
+      <p class="subtitle">Create your own creature or explore different worlds!</p>
+    </div>
 
     <div class="section">
-      <h2 class="section-title">Create</h2>
+      <h2 class="section-title">✏️ Create</h2>
       <div class="option-grid">
         <a href="paint.html" class="option-card">
           <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 4h2v5l-1-.75L9 9V4zm9 16H6V4h1v9l3-2.25L13 13V4h5v16z"/>
           </svg>
-          <div>Paint a Creature</div>
+          <div>Paint Your Creature</div>
         </a>
       </div>
     </div>
@@ -156,7 +286,7 @@
     <div class="divider"></div>
 
     <div class="section">
-      <h2 class="section-title">Explore Habitats</h2>
+      <h2 class="section-title">🌍 Explore Worlds</h2>
       <div class="option-grid">
         <a href="garden.html" class="option-card">
           <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
