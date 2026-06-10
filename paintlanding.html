@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paint App</title>
+  <style>
+    :root {
+      --bg: #f4f4f4;
+      --card: #ffffff;
+      --primary: #0055a5;
+      --primary-dark: #003f7f;
+      --text: #333;
+      --muted: #666;
+      --border: #d9d9d9;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .main-container {
+      background: var(--card);
+      padding: 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      text-align: center;
+      max-width: 900px;
+      width: 100%;
+      border: 1px solid var(--border);
+    }
+
+    .back-link {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s ease;
+    }
+
+    .back-link:hover {
+      color: var(--primary-dark);
+    }
+
+    h1 {
+      color: var(--primary);
+      margin: 0 0 0.5rem;
+      font-size: 2.25rem;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin: 0 0 2rem;
+      font-size: 1.05rem;
+    }
+
+    .section {
+      margin-bottom: 2.5rem;
+    }
+
+    .section:last-of-type {
+      margin-bottom: 0;
+    }
+
+    .section-title {
+      color: var(--text);
+      font-size: 1.3rem;
+      margin: 0 0 1rem;
+      font-weight: 600;
+    }
+
+    .option-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .option-card {
+      background: var(--primary);
+      padding: 2rem 1.5rem;
+      border-radius: 12px;
+      text-decoration: none;
+      color: #fff;
+      font-weight: bold;
+      font-size: 1.1rem;
+      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 160px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .option-card:hover {
+      background: var(--primary-dark);
+      transform: translateY(-4px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    }
+
+    .option-card .icon {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 2rem 0;
+    }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back-link">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+    </svg>
+    Back to Home
+  </a>
+
+  <div class="main-container">
+    <h1>Paint</h1>
+    <p class="subtitle">Create your own creature or explore different habitats</p>
+
+    <div class="section">
+      <h2 class="section-title">Create</h2>
+      <div class="option-grid">
+        <a href="paint.html" class="option-card">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 4h2v5l-1-.75L9 9V4zm9 16H6V4h1v9l3-2.25L13 13V4h5v16z"/>
+          </svg>
+          <div>Paint a Creature</div>
+        </a>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section">
+      <h2 class="section-title">Explore Habitats</h2>
+      <div class="option-grid">
+        <a href="garden.html" class="option-card">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2c-1.1 0-2 .9-2 2v3.5c0 1.93-1.57 3.5-3.5 3.5S3 9.43 3 7.5V4c0-1.1-.9-2-2-2s2 .9 2 2v3.5C3 10.43 4.57 12 7.5 12c1.76 0 3.22-1.3 3.46-3h2.08c.24 1.7 1.7 3 3.46 3 2.93 0 4.5-1.57 4.5-4.5V4c0-1.1.9-2 2-2s-2 .9-2 2v3.5c0 1.93-1.57 3.5-3.5 3.5S14 9.43 14 7.5V4c0-1.1-.9-2-2-2zm-1 10v10h2V12h-2z"/>
+          </svg>
+          <div>Garden</div>
+        </a>
+
+        <a href="aquarium.html" class="option-card">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2c-1.1 0-2 .9-2 2 0 .74.4 1.38 1 1.72V7h-1c-1.1 0-2 .9-2 2v1H6c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2h-2V9c0-1.1-.9-2-2-2h-1V5.72c.6-.34 1-.98 1-1.72 0-1.1-.9-2-2-2z"/>
+          </svg>
+          <div>Aquarium</div>
+        </a>
+
+        <a href="safari.html" class="option-card">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+          </svg>
+          <div>Safari</div>
+        </a>
+
+        <a href="house.html" class="option-card">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+          </svg>
+          <div>House</div>
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
