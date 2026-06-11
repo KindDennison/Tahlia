@@ -32,24 +32,87 @@
     text-align: center;
   }
 
-  #topControls {
+  select, button, input { font-family: inherit; }
+
+  /* ── Habitat tab bar ── */
+  #habitatTabs {
     display: flex;
-    flex-wrap: wrap;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 4px 2px 6px;
+    width: 100%;
+    max-width: 520px;
     justify-content: center;
-    gap: 1vmin;
-    margin-bottom: 1vmin;
+  }
+  #habitatTabs::-webkit-scrollbar { display: none; }
+
+  .hTab {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 7px 12px 6px;
+    border-radius: 18px;
+    border: 3px solid transparent;
+    cursor: pointer;
+    font-size: clamp(0.65em, 2.2vmin, 0.9em);
+    font-weight: bold;
+    color: #fff;
+    transition: transform .15s, box-shadow .15s;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .hTab .tabEmoji { font-size: clamp(1.3em, 4vmin, 1.9em); }
+  .hTab.active {
+    border-color: #fff;
+    transform: scale(1.10);
+    box-shadow: 0 3px 10px rgba(0,0,0,.28);
   }
 
-  select, button, input {
-    font-family: inherit;
+  /* ── Animal grid ── */
+  #animalPicker {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    width: 100%;
+    max-width: 520px;
+    padding: 4px 2px;
   }
 
-  select {
-    font-size: clamp(.9em, 2vmin, 1.2em);
-    padding: .7vmin 1.2vmin;
-    border-radius: 12px;
-    border: 2px solid #b7b7b7;
+  .animalBtn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
     background: #fff;
+    border: 3px solid #ddd;
+    border-radius: 14px;
+    padding: 5px 3px 6px;
+    cursor: pointer;
+    transition: transform .12s, border-color .12s, box-shadow .12s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .animalBtn img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: contain;
+    border-radius: 8px;
+    pointer-events: none;
+  }
+  .animalBtn span {
+    font-size: clamp(0.6em, 1.9vmin, 0.82em);
+    font-weight: bold;
+    color: #444;
+    text-align: center;
+    line-height: 1.1;
+  }
+  .animalBtn.active {
+    border-color: var(--habitat-color, #ff7043);
+    box-shadow: 0 0 0 3px var(--habitat-color, #ff7043);
+    transform: scale(1.06);
   }
 
   #paintWrap {
@@ -259,39 +322,30 @@
 <div id="paintPanel">
   <h1 id="titleText">Paint your butterfly, then let it fly!</h1>
 
-  <div id="topControls">
-    <select id="animalSelect">
-      <optgroup label="Garden">
-        <option value="butterfly">Butterfly</option>
-        <option value="ladybird">Ladybird</option>
-        <option value="bee">Bee</option>
-        <option value="frog">Frog</option>
-      </optgroup>
-      <optgroup label="Aquarium">
-        <option value="fish">Fish</option>
-        <option value="turtle">Turtle</option>
-        <option value="jellyfish">Jellyfish</option>
-        <option value="shark">Shark</option>
-      </optgroup>
-      <optgroup label="Safari">
-        <option value="lion">Lion</option>
-        <option value="zebra">Zebra</option>
-        <option value="rhino">Rhino</option>
-        <option value="elephant">Elephant</option>
-      </optgroup>
-      <optgroup label="House">
-        <option value="cat">Cat</option>
-        <option value="dog">Dog</option>
-        <option value="hamster">Hamster</option>
-        <option value="snake">Snake</option>
-      </optgroup>
-      <optgroup label="Flowers">
-        <option value="rose">Rose</option>
-        <option value="sunflower">Sunflower</option>
-        <option value="tulip">Tulip</option>
-      </optgroup>
-    </select>
-  </div>
+  <div id="habitatTabs"></div>
+  <div id="animalPicker"></div>
+  <!-- hidden select kept for JS compatibility -->
+  <select id="animalSelect" style="display:none">
+    <option value="butterfly">Butterfly</option>
+    <option value="ladybird">Ladybird</option>
+    <option value="bee">Bee</option>
+    <option value="frog">Frog</option>
+    <option value="fish">Fish</option>
+    <option value="turtle">Turtle</option>
+    <option value="jellyfish">Jellyfish</option>
+    <option value="shark">Shark</option>
+    <option value="lion">Lion</option>
+    <option value="zebra">Zebra</option>
+    <option value="rhino">Rhino</option>
+    <option value="elephant">Elephant</option>
+    <option value="cat">Cat</option>
+    <option value="dog">Dog</option>
+    <option value="hamster">Hamster</option>
+    <option value="snake">Snake</option>
+    <option value="rose">Rose</option>
+    <option value="sunflower">Sunflower</option>
+    <option value="tulip">Tulip</option>
+  </select>
 
   <div id="paintWrap">
     <canvas id="paintCanvas" width="320" height="300"></canvas>
@@ -375,6 +429,45 @@ const creaturesCol = collection(db, "creatures");
 const ADMIN_PIN = "1234";          // change this
 const IMG_PATH  = "./images/";     // where the outline PNGs live
 
+/* Habitat definitions — drives the tab bar and animal grid */
+const HABITATS = [
+  {
+    id: "garden",
+    label: "Garden",
+    emoji: "🌿",
+    color: "#43a047",
+    animals: ["butterfly","ladybird","bee","frog"]
+  },
+  {
+    id: "aquarium",
+    label: "Aquarium",
+    emoji: "🐠",
+    color: "#1e88e5",
+    animals: ["fish","turtle","jellyfish","shark"]
+  },
+  {
+    id: "safari",
+    label: "Safari",
+    emoji: "🦁",
+    color: "#fb8c00",
+    animals: ["lion","zebra","rhino","elephant"]
+  },
+  {
+    id: "house",
+    label: "House",
+    emoji: "🏠",
+    color: "#8e24aa",
+    animals: ["cat","dog","hamster","snake"]
+  },
+  {
+    id: "flowers",
+    label: "Flowers",
+    emoji: "🌸",
+    color: "#e91e8c",
+    animals: ["rose","sunflower","tulip"]
+  }
+];
+
 // Friendly verb per scene, used in the title + button.
 const VERBS = {
   butterfly:"fly",  ladybird:"fly",   bee:"fly",      frog:"hop",
@@ -410,6 +503,92 @@ const animalSel= document.getElementById('animalSelect');
 const titleEl  = document.getElementById('titleText');
 const sendBtn  = document.getElementById('sendBtn');
 const statusEl = document.getElementById('status');
+
+/* ============================================================
+   VISUAL ANIMAL PICKER
+   ============================================================ */
+const habitatTabsEl = document.getElementById('habitatTabs');
+const animalPickerEl = document.getElementById('animalPicker');
+
+let activeHabitat = HABITATS[0].id;
+
+// Capitalise first letter for display
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function buildPicker() {
+  // Build habitat tabs
+  HABITATS.forEach(h => {
+    const tab = document.createElement('button');
+    tab.className = 'hTab' + (h.id === activeHabitat ? ' active' : '');
+    tab.style.background = h.color;
+    tab.dataset.habitat = h.id;
+    tab.innerHTML = `<span class="tabEmoji">${h.emoji}</span>${h.label}`;
+    tab.addEventListener('click', () => switchHabitat(h.id));
+    habitatTabsEl.appendChild(tab);
+  });
+
+  renderAnimalGrid(activeHabitat);
+}
+
+function switchHabitat(habitatId) {
+  activeHabitat = habitatId;
+  // Update tab active state + CSS variable
+  habitatTabsEl.querySelectorAll('.hTab').forEach(t => {
+    t.classList.toggle('active', t.dataset.habitat === habitatId);
+  });
+  renderAnimalGrid(habitatId);
+}
+
+function renderAnimalGrid(habitatId) {
+  const h = HABITATS.find(x => x.id === habitatId);
+  animalPickerEl.innerHTML = '';
+  animalPickerEl.style.setProperty('--habitat-color', h.color);
+
+  // Up to 4 columns; fewer animals = wider buttons via auto-fill
+  animalPickerEl.style.gridTemplateColumns =
+    h.animals.length <= 3
+      ? `repeat(${h.animals.length}, 1fr)`
+      : 'repeat(4, 1fr)';
+
+  h.animals.forEach(animal => {
+    const btn = document.createElement('button');
+    btn.className = 'animalBtn' + (animalSel.value === animal ? ' active' : '');
+    btn.dataset.animal = animal;
+
+    const img = document.createElement('img');
+    img.src = IMG_PATH + animal + '.png';
+    img.alt = animal;
+    img.loading = 'lazy';
+    // Fallback: show emoji if image missing
+    img.onerror = () => {
+      img.style.display = 'none';
+      const fb = document.createElement('div');
+      fb.style.cssText = 'font-size:2.5em;line-height:1;padding:6px 0';
+      fb.textContent = EMOJI[animal] || '✨';
+      btn.insertBefore(fb, btn.querySelector('span'));
+    };
+
+    const label = document.createElement('span');
+    label.textContent = cap(animal);
+
+    btn.appendChild(img);
+    btn.appendChild(label);
+    btn.addEventListener('click', () => selectAnimal(animal));
+    animalPickerEl.appendChild(btn);
+  });
+}
+
+function selectAnimal(animal) {
+  // Update hidden select (keeps rest of JS working unchanged)
+  animalSel.value = animal;
+  // Highlight active button
+  animalPickerEl.querySelectorAll('.animalBtn').forEach(b => {
+    b.classList.toggle('active', b.dataset.animal === animal);
+  });
+  loadAnimal(animal);
+}
+
+buildPicker();
 
 /* ============================================================
    STATE
@@ -702,7 +881,7 @@ sendBtn.addEventListener('click', async () => {
   }
 });
 
-animalSel.addEventListener('change', () => loadAnimal(animalSel.value));
+// animal selection is handled by the visual picker above
 
 /* ============================================================
    ADMIN  →  Firestore
@@ -818,7 +997,7 @@ async function loadRecentDrawings() {
 /* ============================================================
    START
    ============================================================ */
-loadAnimal(animalSel.value);
+selectAnimal(HABITATS[0].animals[0]); // start on butterfly
 </script>
 
 </body>
