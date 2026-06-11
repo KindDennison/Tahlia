@@ -86,6 +86,12 @@ onSnapshot(
     console.log("House snapshot received. Documents:", snap.size);
 
     snap.docChanges().forEach((change) => {
+      if (change.type === "removed") {
+        creatures.forEach(s => { if (s.docId === change.doc.id) s.dying = true; });
+        seen.delete(change.doc.id);
+        return;
+      }
+
       if (change.type !== "added") return;
       if (seen.has(change.doc.id)) return;
 
@@ -102,7 +108,7 @@ onSnapshot(
 
       const animal = String(data.animal || "cat").toLowerCase().trim();
 
-      spawn(data.img, animal);
+      spawn(data.img, animal, change.doc.id);
     });
   },
   (error) => {
@@ -110,7 +116,7 @@ onSnapshot(
   }
 );
 
-function spawn(dataUrl, animal) {
+function spawn(dataUrl, animal, docId) {
   const img = new Image();
 
   img.onload = () => {
@@ -130,6 +136,7 @@ function spawn(dataUrl, animal) {
       vy: (Math.random() - 0.5) * (isFloor ? 0.2 : isAerial ? 1.2 : 0.8),
       wobble: Math.random() * Math.PI * 2,
       scale: 0.5 + Math.random() * 0.45,
+      docId,
       born: performance.now(),
       alpha: 0
     });
@@ -279,7 +286,10 @@ function loop(now) {
     const c = creatures[i];
     const age = now - c.born;
 
-    if (age < 1000) {
+    if (c.dying) {
+      c.alpha = Math.max(0, c.alpha - 0.025);
+      if (c.alpha <= 0) { creatures.splice(i, 1); continue; }
+    } else if (age < 1000) {
       c.alpha = age / 1000;
     } else if (age > LIFETIME_MS - 2000) {
       c.alpha = Math.max(0, (LIFETIME_MS - age) / 2000);
