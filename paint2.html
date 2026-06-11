@@ -285,6 +285,11 @@
         <option value="hamster">Hamster</option>
         <option value="snake">Snake</option>
       </optgroup>
+      <optgroup label="Flowers">
+        <option value="rose">Rose</option>
+        <option value="sunflower">Sunflower</option>
+        <option value="tulip">Tulip</option>
+      </optgroup>
     </select>
   </div>
 
@@ -322,6 +327,7 @@
       <button id="deleteAquarium" class="danger">Delete aquarium drawings</button>
       <button id="deleteSafari" class="danger">Delete safari drawings</button>
       <button id="deleteHouse" class="danger">Delete house drawings</button>
+      <button id="deleteFlowers" class="danger">Delete flower drawings</button>
       <button id="deleteAll" class="danger">Delete ALL drawings</button>
       <button id="closeAdmin2">Close</button>
     </div>
@@ -374,14 +380,16 @@ const VERBS = {
   butterfly:"fly",  ladybird:"fly",   bee:"fly",      frog:"hop",
   fish:"swim",      turtle:"swim",    jellyfish:"swim", shark:"swim",
   lion:"roam",      zebra:"roam",     rhino:"roam",    elephant:"roam",
-  cat:"play",       dog:"play",       hamster:"play",  snake:"slither"
+  cat:"play",       dog:"play",       hamster:"play",  snake:"slither",
+  rose:"bloom",     sunflower:"bloom",  tulip:"bloom"
 };
 
 const EMOJI = {
   butterfly:"🦋", ladybird:"🐞", bee:"🐝", frog:"🐸",
   fish:"🐟", turtle:"🐢", jellyfish:"🪼", shark:"🦈",
   lion:"🦁", zebra:"🦓", rhino:"🦏", elephant:"🐘",
-  cat:"🐱", dog:"🐶", hamster:"🐹", snake:"🐍"
+  cat:"🐱", dog:"🐶", hamster:"🐹", snake:"🐍",
+  rose:"🌹", sunflower:"🌻", tulip:"🌷"
 };
 
 const COLOURS = [
@@ -644,7 +652,8 @@ const HABITAT = {
   butterfly:"garden", ladybird:"garden", bee:"garden",   frog:"garden",
   fish:"aquarium",    turtle:"aquarium", jellyfish:"aquarium", shark:"aquarium",
   lion:"safari",      zebra:"safari",    rhino:"safari",  elephant:"safari",
-  cat:"house",        dog:"house",       hamster:"house", snake:"house"
+  cat:"house",        dog:"house",       hamster:"house", snake:"house",
+  rose:"flowers",    sunflower:"flowers", tulip:"flowers"
 };
 
 sendBtn.addEventListener('click', async () => {
@@ -745,6 +754,9 @@ document.getElementById('deleteAquarium').onclick = async () => {
 };
 document.getElementById('deleteSafari').onclick = async () => {
   await deleteByQuery(query(creaturesCol, where("habitat","==","safari")), "all safari drawings");
+};
+document.getElementById('deleteFlowers').onclick = async () => {
+  await deleteByQuery(query(creaturesCol, where("habitat","==","flowers")), "all flower drawings");
 };
 document.getElementById('deleteHouse').onclick = async () => {
   await deleteByQuery(query(creaturesCol, where("habitat","==","house")), "all house drawings");
