@@ -311,24 +311,58 @@
 
   <div id="pinArea" class="adminRow">
     <input id="adminPin" type="password" placeholder="PIN">
-    <button id="unl
-    <input id="adminPin" type="password" placeholder="PIN">
-    <button id="unlockBtn" class="good">Unlock</button>
+    <button id="unlockAdmin">Unlock</button>
     <button id="closeAdmin">Close</button>
   </div>
 
-  <div id="adminBody" style="display:none;">
+  <div id="adminTools" style="display:none;">
     <div class="adminRow">
-      <button id="exportBtn">Export all (.zip)</button>
-      <button id="clearAllBtn" class="danger">Clear all saved art</button>
+      <button id="loadRecent" class="good">Load recent drawings</button>
+      <button id="deleteGarden" class="danger">Delete garden drawings</button>
+      <button id="deleteAquarium" class="danger">Delete aquarium drawings</button>
+      <button id="deleteSafari" class="danger">Delete safari drawings</button>
+      <button id="deleteHouse" class="danger">Delete house drawings</button>
+      <button id="deleteAll" class="danger">Delete ALL drawings</button>
       <button id="closeAdmin2">Close</button>
     </div>
-    <p style="color:#555;margin:6px 0;">Saved drawings are stored on this device.</p>
+
+    <div id="adminStatus"></div>
     <div id="adminList"></div>
   </div>
 </div>
 
-<script>
+<script type="module">
+/* ============================================================
+   FIREBASE
+   ============================================================ */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  serverTimestamp,
+  getDocs,
+  deleteDoc,
+  doc,
+  query,
+  where,
+  orderBy,
+  limit
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
+  authDomain: "teamdennisontracker.firebaseapp.com",
+  projectId: "teamdennisontracker",
+  storageBucket: "teamdennisontracker.firebasestorage.app",
+  messagingSenderId: "915336870349",
+  appId: "1:915336870349:web:c070e9b3fc0b688fe62c84"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+const creaturesCol = collection(db, "creatures");
+
 /* ============================================================
    CONFIG
    ============================================================ */
@@ -602,116 +636,160 @@ canvas.addEventListener('touchmove', movePaint, { passive: false });
 canvas.addEventListener('touchend', endPaint);
 
 /* ============================================================
-   SAVE / SEND
+   SAVE / SEND  →  Firestore
    ============================================================ */
 function currentAnimal() { return animalSel.value; }
 
-function saveDrawing() {
-  if (!ready) return;
-  const dataUrl = canvas.toDataURL('image/png');
-  const store = JSON.parse(localStorage.getItem('savedArt') || '[]');
-  store.push({
-    animal: currentAnimal(),
-    when: new Date().toISOString(),
-    img: dataUrl
-  });
-  localStorage.setItem('savedArt', JSON.stringify(store));
-}
+const HABITAT = {
+  butterfly:"garden", ladybird:"garden", bee:"garden",   frog:"garden",
+  fish:"aquarium",    turtle:"aquarium", jellyfish:"aquarium", shark:"aquarium",
+  lion:"safari",      zebra:"safari",    rhino:"safari",  elephant:"safari",
+  cat:"house",        dog:"house",       hamster:"house", snake:"house"
+};
 
-sendBtn.addEventListener('click', () => {
+sendBtn.addEventListener('click', async () => {
   if (!ready) return;
-  saveDrawing();
-  statusEl.textContent = "Off it goes! " + (EMOJI[currentAnimal()] || "");
-  // Fresh canvas for the next child.
-  fillCtx.clearRect(0, 0, fillCanvas.width, fillCanvas.height);
-  redraw();
-  setTimeout(() => statusEl.textContent = "", 2500);
+
+  const animal  = currentAnimal();
+  const habitat = HABITAT[animal] || "garden";
+  const emoji   = EMOJI[animal] || "✨";
+
+  const dataUrl = canvas.toDataURL('image/png');
+
+  sendBtn.disabled = true;
+  statusEl.textContent = `Sending to the ${habitat}…`;
+
+  try {
+    await addDoc(creaturesCol, {
+      img: dataUrl,
+      animal,
+      habitat,
+      createdAt: serverTimestamp()
+    });
+
+    statusEl.textContent = `Off it goes! ${emoji}`;
+    // Fresh canvas for the next child.
+    fillCtx.clearRect(0, 0, fillCanvas.width, fillCanvas.height);
+    redraw();
+
+  } catch (err) {
+    console.error(err);
+    statusEl.textContent = "Hmm, couldn't send. Try again.";
+  } finally {
+    sendBtn.disabled = false;
+    setTimeout(() => { statusEl.textContent = ""; }, 2500);
+  }
 });
 
 animalSel.addEventListener('change', () => loadAnimal(animalSel.value));
 
 /* ============================================================
-   ADMIN
+   ADMIN  →  Firestore
    ============================================================ */
-const adminToggle = document.getElementById('adminToggle');
-const adminPanel  = document.getElementById('adminPanel');
-const adminPin    = document.getElementById('adminPin');
-const adminBody   = document.getElementById('adminBody');
-const adminList   = document.getElementById('adminList');
+const adminToggle  = document.getElementById('adminToggle');
+const adminPanel   = document.getElementById('adminPanel');
+const adminPin     = document.getElementById('adminPin');
+const unlockAdmin  = document.getElementById('unlockAdmin');
+const pinArea      = document.getElementById('pinArea');
+const adminTools   = document.getElementById('adminTools');
+const adminStatus  = document.getElementById('adminStatus');
+const adminList    = document.getElementById('adminList');
 
-adminToggle.addEventListener('click', () => {
-  adminPanel.style.display = 'block';
-  adminBody.style.display = 'none';
-  adminPin.value = '';
-});
-document.getElementById('closeAdmin').addEventListener('click', closeAdmin);
-document.getElementById('closeAdmin2').addEventListener('click', closeAdmin);
-function closeAdmin() { adminPanel.style.display = 'none'; }
+adminToggle.onclick = () => {
+  adminPanel.style.display = "block";
+};
 
-document.getElementById('unlockBtn').addEventListener('click', () => {
+document.getElementById('closeAdmin').onclick  = closeAdmin;
+document.getElementById('closeAdmin2').onclick = closeAdmin;
+function closeAdmin() { adminPanel.style.display = "none"; }
+
+unlockAdmin.onclick = () => {
   if (adminPin.value === ADMIN_PIN) {
-    adminBody.style.display = 'block';
-    renderAdminList();
+    pinArea.style.display  = "none";
+    adminTools.style.display = "block";
+    adminStatus.textContent = "Admin unlocked.";
   } else {
-    alert('Wrong PIN');
+    adminStatus.textContent = "Wrong PIN.";
   }
-});
+};
 
-function renderAdminList() {
-  const store = JSON.parse(localStorage.getItem('savedArt') || '[]');
-  adminList.innerHTML = '';
-  if (!store.length) {
-    adminList.innerHTML = '<p style="color:#777;">No saved drawings yet.</p>';
-    return;
-  }
-  store.forEach((item, idx) => {
-    const card = document.createElement('div');
-    card.className = 'adminCard';
-    card.innerHTML = `
-      <img src="${item.img}" alt="${item.animal}">
-      <small>${item.animal} · ${new Date(item.when).toLocaleString('en-GB')}</small>
-    `;
-    const dl = document.createElement('button');
-    dl.textContent = 'Download';
-    dl.onclick = () => {
-      const a = document.createElement('a');
-      a.href = item.img;
-      a.download = `${item.animal}-${idx}.png`;
-      a.click();
-    };
-    const del = document.createElement('button');
-    del.className = 'danger';
-    del.textContent = 'Delete';
-    del.onclick = () => {
-      const s = JSON.parse(localStorage.getItem('savedArt') || '[]');
-      s.splice(idx, 1);
-      localStorage.setItem('savedArt', JSON.stringify(s));
-      renderAdminList();
-    };
-    card.appendChild(dl);
-    card.appendChild(del);
-    adminList.appendChild(card);
-  });
+async function deleteByQuery(q, label) {
+  if (!confirm(`Are you sure you want to delete ${label}?`)) return;
+  adminStatus.textContent = "Deleting…";
+  const snap = await getDocs(q);
+  await Promise.all(snap.docs.map(d => deleteDoc(doc(db, "creatures", d.id))));
+  adminStatus.textContent = `Deleted ${snap.size} drawing(s).`;
+  loadRecentDrawings();
 }
 
-document.getElementById('clearAllBtn').addEventListener('click', () => {
-  if (confirm('Delete ALL saved drawings? This cannot be undone.')) {
-    localStorage.removeItem('savedArt');
-    renderAdminList();
-  }
-});
+document.getElementById('deleteAll').onclick = async () => {
+  await deleteByQuery(query(creaturesCol), "ALL drawings");
+};
+document.getElementById('deleteGarden').onclick = async () => {
+  await deleteByQuery(query(creaturesCol, where("habitat","==","garden")), "all garden drawings");
+};
+document.getElementById('deleteAquarium').onclick = async () => {
+  await deleteByQuery(query(creaturesCol, where("habitat","==","aquarium")), "all aquarium drawings");
+};
+document.getElementById('deleteSafari').onclick = async () => {
+  await deleteByQuery(query(creaturesCol, where("habitat","==","safari")), "all safari drawings");
+};
+document.getElementById('deleteHouse').onclick = async () => {
+  await deleteByQuery(query(creaturesCol, where("habitat","==","house")), "all house drawings");
+};
+document.getElementById('loadRecent').onclick = loadRecentDrawings;
 
-// Simple "export all": triggers a download for each saved PNG.
-document.getElementById('exportBtn').addEventListener('click', () => {
-  const store = JSON.parse(localStorage.getItem('savedArt') || '[]');
-  if (!store.length) { alert('Nothing to export.'); return; }
-  store.forEach((item, idx) => {
-    const a = document.createElement('a');
-    a.href = item.img;
-    a.download = `${item.animal}-${idx}.png`;
-    setTimeout(() => a.click(), idx * 250);   // stagger so the browser allows them
+async function loadRecentDrawings() {
+  adminStatus.textContent = "Loading recent drawings…";
+  adminList.innerHTML = "";
+
+  const q    = query(creaturesCol, orderBy("createdAt","desc"), limit(30));
+  const snap = await getDocs(q);
+
+  snap.forEach(d => {
+    const data = d.data();
+
+    const card = document.createElement("div");
+    card.className = "adminCard";
+
+    const img = document.createElement("img");
+    img.src = data.img;
+
+    const label = document.createElement("small");
+    label.textContent = `${data.animal || "unknown"} / ${data.habitat || "unknown"}`;
+
+    const respawnBtn = document.createElement("button");
+    respawnBtn.textContent = "Respawn";
+    respawnBtn.onclick = async () => {
+      await addDoc(creaturesCol, {
+        img: data.img,
+        animal: data.animal,
+        habitat: data.habitat,
+        createdAt: serverTimestamp(),
+        respawned: true
+      });
+      adminStatus.textContent = "Drawing respawned.";
+    };
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "danger";
+    deleteBtn.textContent = "Delete";
+    deleteBtn.onclick = async () => {
+      if (!confirm("Delete this drawing?")) return;
+      await deleteDoc(doc(db, "creatures", d.id));
+      adminStatus.textContent = "Drawing deleted.";
+      loadRecentDrawings();
+    };
+
+    card.appendChild(img);
+    card.appendChild(label);
+    card.appendChild(respawnBtn);
+    card.appendChild(deleteBtn);
+    adminList.appendChild(card);
   });
-});
+
+  adminStatus.textContent = `Loaded ${snap.size} drawing(s).`;
+}
 
 /* ============================================================
    START
