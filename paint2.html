@@ -654,7 +654,19 @@ sendBtn.addEventListener('click', async () => {
   const habitat = HABITAT[animal] || "garden";
   const emoji   = EMOJI[animal] || "✨";
 
-  const dataUrl = canvas.toDataURL('image/png');
+  // Export with transparent background so the aquarium scene shows through.
+  const exportCanvas = document.createElement('canvas');
+  exportCanvas.width  = canvas.width;
+  exportCanvas.height = canvas.height;
+  const exportCtx = exportCanvas.getContext('2d');
+  // 1. child's colour fill (already masked to inside-the-lines)
+  exportCtx.drawImage(fillCanvas, 0, 0);
+  // 2. black outline on top
+  const scale = Math.min(canvas.width / outlineImg.width, canvas.height / outlineImg.height);
+  const dw = outlineImg.width  * scale;
+  const dh = outlineImg.height * scale;
+  exportCtx.drawImage(outlineImg, (canvas.width - dw)/2, (canvas.height - dh)/2, dw, dh);
+  const dataUrl = exportCanvas.toDataURL('image/png');
 
   sendBtn.disabled = true;
   statusEl.textContent = `Sending to the ${habitat}…`;
