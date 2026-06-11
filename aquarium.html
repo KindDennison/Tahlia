@@ -142,6 +142,12 @@ onSnapshot(
     console.log("Aquarium snapshot received. Documents:", snap.size);
 
     snap.docChanges().forEach((change) => {
+      if (change.type === "removed") {
+        swimmers.forEach(s => { if (s.docId === change.doc.id) s.dying = true; });
+        seen.delete(change.doc.id);
+        return;
+      }
+
       if (change.type !== "added") return;
       if (seen.has(change.doc.id)) return;
 
@@ -159,7 +165,7 @@ onSnapshot(
       }
 
       seen.add(change.doc.id);
-      spawn(data.img, animal);
+      spawn(data.img, animal, change.doc.id);
     });
   },
   (error) => {
@@ -167,7 +173,7 @@ onSnapshot(
   }
 );
 
-function spawn(dataUrl, animal) {
+function spawn(dataUrl, animal, docId) {
   const img = new Image();
   const style = getStyle(animal);
 
@@ -175,6 +181,7 @@ function spawn(dataUrl, animal) {
     const direction = Math.random() < 0.5 ? -1 : 1;
 
     swimmers.push({
+      docId,
       img,
       animal,
       style,
@@ -317,7 +324,10 @@ function loop(now) {
     const s = swimmers[i];
     const age = now - s.born;
 
-    if (age < 1000) {
+    if (s.dying) {
+      s.alpha = Math.max(0, s.alpha - 0.025);
+      if (s.alpha <= 0) { swimmers.splice(i, 1); continue; }
+    } else if (age < 1000) {
       s.alpha = age / 1000;
     } else if (age > LIFETIME_MS - 2000) {
       s.alpha = Math.max(0, (LIFETIME_MS - age) / 2000);
