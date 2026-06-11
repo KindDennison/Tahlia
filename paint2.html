@@ -6,79 +6,100 @@
 <title>Paint an Animal</title>
 
 <style>
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+  *, *::before, *::after {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    margin: 0; padding: 0;
+  }
 
   html, body {
     width: 100%; height: 100%;
     font-family: "Comic Sans MS", "Segoe UI", sans-serif;
     background: #f4f1e0;
-    overflow: hidden;
+    /* allow body to scroll in portrait */
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   select, button, input { font-family: inherit; }
 
-  /* ═══════════════════════════════════════
-     PORTRAIT  — single scrollable column
-     The page CAN scroll so nothing overlaps.
-     Canvas + controls are centred.
-  ═══════════════════════════════════════ */
+  /* ═══════════════════════════════════
+     PORTRAIT — stacked, body scrolls
+  ═══════════════════════════════════ */
+
+  /* outer wrapper: just a centred column */
   #paintPanel {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 8px 8px 16px;
-    min-height: 100%;
-    gap: 6px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+    padding: 10px 10px 20px;
+    width: 100%;
   }
 
+  /* picker column — full width in portrait */
+  #pickerCol {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    max-width: 540px;
+  }
+
+  /* canvas column — centred, full width */
+  #canvasCol {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 540px;
+  }
+
+  /* title */
   h1 {
-    font-size: clamp(1em, 3.5vw, 1.6em);
+    font-size: clamp(0.95em, 4vw, 1.5em);
     color: #33691e;
     text-align: center;
-    flex-shrink: 0;
-    padding: 2px 0;
   }
 
-  /* ── Habitat tab bar ── */
+  /* ── Habitat tabs ── */
   #habitatTabs {
     display: flex;
+    flex-direction: row;
     gap: 5px;
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    padding: 2px 4px 4px;
+    -webkit-overflow-scrolling: touch;
+    padding: 2px 2px 4px;
     width: 100%;
-    max-width: 560px;
-    flex-shrink: 0;
   }
   #habitatTabs::-webkit-scrollbar { display: none; }
 
   .hTab {
     flex: 1 1 0;
-    min-width: 56px;
+    min-width: 52px;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 2px;
-    padding: 5px 6px 4px;
-    border-radius: 14px;
+    padding: 5px 4px 4px;
+    border-radius: 12px;
     border: 3px solid transparent;
     cursor: pointer;
-    font-size: clamp(0.55em, 1.8vw, 0.78em);
+    font-size: clamp(0.5em, 2vw, 0.75em);
     font-weight: bold;
     color: #fff;
     transition: transform .15s, box-shadow .15s;
     user-select: none; -webkit-user-select: none;
     white-space: nowrap;
   }
-  .hTab .tabEmoji { font-size: clamp(1.2em, 3.5vw, 1.6em); line-height: 1.2; }
+  .hTab .tabEmoji { font-size: clamp(1.1em, 4vw, 1.5em); line-height: 1.2; }
   .hTab.active {
     border-color: #fff;
     transform: scale(1.08);
-    box-shadow: 0 3px 10px rgba(0,0,0,.28);
+    box-shadow: 0 3px 10px rgba(0,0,0,.3);
   }
 
   /* ── Animal grid ── */
@@ -87,18 +108,16 @@
     grid-template-columns: repeat(4, 1fr);
     gap: 5px;
     width: 100%;
-    max-width: 560px;
-    flex-shrink: 0;
   }
 
   .animalBtn {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
+    gap: 3px;
     background: #fff;
     border: 3px solid #ddd;
-    border-radius: 12px;
+    border-radius: 10px;
     padding: 4px 3px 5px;
     cursor: pointer;
     transition: transform .12s, border-color .12s, box-shadow .12s;
@@ -109,9 +128,10 @@
     object-fit: contain;
     border-radius: 6px;
     pointer-events: none;
+    display: block;
   }
   .animalBtn span {
-    font-size: clamp(0.55em, 1.6vw, 0.75em);
+    font-size: clamp(0.5em, 2vw, 0.72em);
     font-weight: bold;
     color: #444;
     text-align: center;
@@ -120,14 +140,16 @@
   .animalBtn.active {
     border-color: var(--habitat-color, #ff7043);
     box-shadow: 0 0 0 3px var(--habitat-color, #ff7043);
-    transform: scale(1.06);
+    transform: scale(1.05);
   }
 
   /* ── Canvas ── */
   #paintWrap {
     position: relative;
     touch-action: none;
-    flex-shrink: 0;
+    /* width/height set by JS; make sure it centres */
+    display: flex;
+    justify-content: center;
   }
 
   #paintCanvas {
@@ -135,23 +157,20 @@
     border-radius: 14px;
     box-shadow: 0 4px 12px rgba(0,0,0,.2);
     display: block;
-    /* Size set by JS */
   }
 
-  /* ── Palette ── */
+  /* ── Palette — same width as canvas, wraps neatly ── */
   #palette {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: clamp(4px, 1.5vw, 10px);
+    gap: clamp(5px, 2vw, 10px);
     width: 100%;
-    max-width: 560px;
-    flex-shrink: 0;
   }
 
   .swatch {
-    width:  clamp(30px, 6vw, 52px);
-    height: clamp(30px, 6vw, 52px);
+    width:  clamp(32px, 7vw, 52px);
+    height: clamp(32px, 7vw, 52px);
     border-radius: 50%;
     border: 3px solid #fff;
     box-shadow: 0 2px 5px rgba(0,0,0,.3);
@@ -165,44 +184,42 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    flex-shrink: 0;
   }
-  #brushRow label { font-size: clamp(.85em, 2vw, 1.1em); color: #555; }
-  #brushSize { width: clamp(120px, 35vw, 260px); }
+  #brushRow label { font-size: clamp(.85em, 2.5vw, 1.1em); color: #555; }
+  #brushSize { width: clamp(120px, 38vw, 260px); }
   #brushPreview {
-    width: clamp(28px, 5vw, 46px);
-    height: clamp(28px, 5vw, 46px);
+    width:  clamp(28px, 6vw, 44px);
+    height: clamp(28px, 6vw, 44px);
     display: flex; align-items: center; justify-content: center;
   }
   #brushPreview div { background: #333; border-radius: 50%; }
 
   /* ── Send button ── */
   #sendBtn {
-    font-size: clamp(1em, 2.8vw, 1.6em);
+    font-size: clamp(1em, 3vw, 1.5em);
     font-weight: bold;
     color: #fff;
     background: #ff7043;
     border: none;
-    padding: clamp(8px,1.8vw,14px) clamp(20px,5vw,40px);
+    padding: clamp(8px, 2vw, 14px) clamp(22px, 6vw, 42px);
     border-radius: 40px;
     box-shadow: 0 4px 0 #d84315;
     cursor: pointer;
-    flex-shrink: 0;
   }
   #sendBtn:active  { transform: translateY(3px); box-shadow: 0 1px 0 #d84315; }
   #sendBtn:disabled { opacity: .5; }
 
   #status {
     min-height: 1.4em;
-    font-size: clamp(.75em, 1.8vw, 1em);
+    font-size: clamp(.75em, 2vw, 1em);
     color: #777;
-    flex-shrink: 0;
+    text-align: center;
   }
 
-  /* ═══════════════════════════════════════
-     LANDSCAPE  — two columns:
-     left = picker,  right = canvas + tools
-  ═══════════════════════════════════════ */
+  /* ═══════════════════════════════════════════════
+     LANDSCAPE — two columns, nothing scrolls
+     Left: picker  |  Right: title + canvas + tools
+  ═══════════════════════════════════════════════ */
   @media (orientation: landscape) {
     html, body { overflow: hidden; }
 
@@ -212,80 +229,73 @@
       justify-content: center;
       padding: 6px 10px;
       gap: 10px;
-      overflow: hidden;
       height: 100vh;
+      overflow: hidden;
     }
 
-    /* Left panel: habitat tabs (now vertical) + animal grid */
+    /* LEFT: picker, fixed width, internal scroll if needed */
     #pickerCol {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
       flex: 0 0 auto;
-      width: clamp(160px, 28vw, 240px);
+      width: clamp(150px, 26vw, 220px);
+      max-width: none;
       overflow-y: auto;
       overflow-x: hidden;
-      -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      gap: 5px;
       align-items: stretch;
     }
     #pickerCol::-webkit-scrollbar { display: none; }
 
+    /* tabs go vertical in landscape */
     #habitatTabs {
       flex-direction: column;
-      max-width: none;
-      width: 100%;
-      gap: 4px;
-      padding: 2px;
       overflow-x: hidden;
       overflow-y: visible;
+      padding: 2px;
+      gap: 4px;
     }
     .hTab {
+      flex: 0 0 auto;
       flex-direction: row;
       justify-content: flex-start;
-      gap: 6px;
+      gap: 7px;
       padding: 5px 8px;
-      font-size: clamp(0.6em, 1.4vh, 0.82em);
+      font-size: clamp(0.58em, 1.5vh, 0.8em);
       min-width: unset;
-      flex: 0 0 auto;
+      border-radius: 10px;
     }
-    .hTab .tabEmoji { font-size: clamp(1em, 2.4vh, 1.3em); }
+    .hTab .tabEmoji { font-size: clamp(1em, 2.5vh, 1.3em); }
 
     #animalPicker {
-      max-width: none;
-      width: 100%;
       grid-template-columns: repeat(2, 1fr);
       gap: 4px;
     }
-    .animalBtn span { font-size: clamp(0.5em, 1.2vh, 0.7em); }
+    .animalBtn span { font-size: clamp(0.48em, 1.2vh, 0.68em); }
 
-    /* Right panel: title + canvas + tools, scrollable if needed */
+    /* RIGHT: canvas column, centred, fills remaining space */
     #canvasCol {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 5px;
       flex: 1 1 0;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-      justify-content: center;
       min-width: 0;
+      max-width: none;
+      justify-content: center;
+      overflow: hidden;
+      gap: 5px;
     }
-    #canvasCol::-webkit-scrollbar { display: none; }
 
-    h1 { font-size: clamp(0.85em, 2vh, 1.2em); }
+    h1 { font-size: clamp(0.8em, 2vh, 1.15em); }
 
-    #palette { gap: clamp(3px, 1vh, 8px); }
     .swatch {
-      width:  clamp(24px, 4.5vh, 42px);
-      height: clamp(24px, 4.5vh, 42px);
+      width:  clamp(24px, 4.5vh, 40px);
+      height: clamp(24px, 4.5vh, 40px);
     }
+    #palette { gap: clamp(3px, 1.2vh, 8px); }
 
     #sendBtn {
-      font-size: clamp(0.85em, 2vh, 1.3em);
-      padding: clamp(6px,1.2vh,10px) clamp(16px,3vw,28px);
+      font-size: clamp(0.82em, 2vh, 1.2em);
+      padding: clamp(5px, 1.2vh, 9px) clamp(14px, 3vw, 26px);
     }
+    #brushSize { width: clamp(100px, 20vw, 200px); }
   }
 
   #adminToggle {
@@ -713,28 +723,40 @@ sizeInp.addEventListener('input', () => {
 updatePreview();
 
 /* ============================================================
-   CANVAS SIZING  — fits available space in both orientations
+   CANVAS SIZING  — measures available space, never overflows
    ============================================================ */
 function sizeCanvas() {
   const isLandscape = window.innerWidth > window.innerHeight;
-  // In landscape the canvas column is ~72% of viewport width minus padding
-  // In portrait it's the full width minus padding, capped at 560px
-  const maxW = isLandscape
-    ? Math.floor((window.innerWidth - 260) * 0.96)
-    : Math.min(window.innerWidth - 20, 560);
-  const maxH = isLandscape
-    ? Math.floor(window.innerHeight * 0.56)
-    : Math.floor(window.innerHeight * 0.38);
-  const size = Math.min(maxW, maxH, 520);
+
+  let size;
+  if (isLandscape) {
+    // Right column width = viewport minus left picker column minus gaps/padding
+    const pickerW = Math.min(Math.max(150, window.innerWidth * 0.26), 220);
+    const availW  = window.innerWidth  - pickerW - 30;   // 30 = gaps + padding
+    // Height: leave room for title + palette + brush + button (approx 160px total)
+    const availH  = window.innerHeight - 160;
+    size = Math.floor(Math.min(availW, availH, 480));
+  } else {
+    // Portrait: full width minus padding, capped; height = ~40% of viewport
+    const availW = Math.min(window.innerWidth - 20, 540);
+    const availH = Math.floor(window.innerHeight * 0.40);
+    size = Math.floor(Math.min(availW, availH, 480));
+  }
+
+  size = Math.max(size, 180); // never go below 180px
   canvas.style.width  = size + 'px';
   canvas.style.height = size + 'px';
   canvas.width  = size;
   canvas.height = size;
 }
 
+let resizeTimer;
 window.addEventListener('resize', () => {
-  sizeCanvas();
-  if (animalSel.value) loadAnimal(animalSel.value);
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    sizeCanvas();
+    if (animalSel.value) loadAnimal(animalSel.value);
+  }, 100);
 });
 sizeCanvas();
 
