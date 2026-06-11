@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flower Garden</title>
+
+<style>
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #81c784;
+    cursor: none;
+  }
+
+  #flowersCanvas {
+    width: 100vw;
+    height: 100vh;
+    display: block;
+  }
+</style>
+</head>
+
+<body>
+<canvas id="flowersCanvas"></canvas>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDJXVZE2VZXPH9jJvzgz9ozBvvbiJfmLbw",
+  authDomain: "teamdennisontracker.firebaseapp.com",
+  projectId: "teamdennisontracker",
+  storageBucket: "teamdennisontracker.firebasestorage.app",
+  messagingSenderId: "915336870349",
+  appId: "1:915336870349:web:c070e9b3fc0b688fe62c84"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+const fc  = document.getElementById("flowersCanvas");
+const fx  = fc.getContext("2d");
+
+let FW, FH, DPR;
+
+function resize() {
+  DPR = window.devicePixelRatio || 1;
+  FW  = fc.clientWidth;
+  FH  = fc.clientHeight;
+  fc.width  = Math.round(FW * DPR);
+  fc.height = Math.round(FH * DPR);
+  fx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+window.addEventListener("resize", resize);
+resize();
+
+/* ============================================================
+   FIRESTORE
+   ============================================================ */
+const creatures = [];
+const seen      = new Set();
+const LIFETIME_MS = 90000;
+
+const q = query(collection(db, "creatures"), where("habitat", "==", "flowers"));
+
+onSnapshot(q, (snap) => {
+  snap.docChanges().forEach((change) => {
+
+    if (change.type === "removed") {
+      creatures.forEach(s => { if (s.docId === change.doc.id) s.dying = true; });
+      seen.delete(change.doc.id);
+      return;
+    }
+
+    if (change.type !== "added") return;
+    if (seen.has(change.doc.id)) return;
+
+    const data   = change.doc.data();
+    const animal = String(data.animal || "rose").toLowerCase().trim();
+
+    if (!data.img) return;
+
+    seen.add(change.doc.id);
+    spawn(data.img, animal, change.doc.id);
+  });
+}, (err) => console.error("Flowers snapshot error:", err));
+
+/* ============================================================
+   SPAWN  — flowers sway gently, don't walk around
+   ============================================================ */
+function spawn(dataUrl, animal, docId) {
+  const img = new Image();
+
+  img.onload = () => {
+    // Place flowers spread across the lower portion of the scene,
+    // overlapping slightly so it feels like a meadow.
+    const col   = creatures.length % 7;   // loose column hint
+    const jitter = (Math.random() - 0.5) * FW * 0.12;
+    const x     = (col / 6) * FW * 0.85 + FW * 0.075 + jitter;
+    const y     = FH - Math.random() * FH * 0.30 - FH * 0.08;
+
+    creatures.push({
+      img, animal, docId,
+      x, y,
+      wobble : Math.random() * Math.PI * 2,
+      sway   : 0.008 + Math.random() * 0.012,   // sway speed
+      swayAmt: 0.04  + Math.random() * 0.06,    // sway amplitude (radians)
+      scale  : 0.55  + Math.random() * 0.35,
+      born   : performance.now(),
+      alpha  : 0,
+      dying  : false
+    });
+  };
+
+  img.onerror = () => console.error("Failed to load flower:", animal);
+  img.src = dataUrl;
+}
+
+/* ============================================================
+   BACKGROUND — sky + rolling hills + grass
+   ============================================================ */
+function drawBg() {
+  // Sky
+  const sky = fx.createLinearGradient(0, 0, 0, FH * 0.6);
+  sky.addColorStop(0,   "#b3e5fc");
+  sky.addColorStop(1,   "#e1f5fe");
+  fx.fillStyle = sky;
+  fx.fillRect(0, 0, FW, FH);
+
+  // Sun
+  fx.save();
+  fx.fillStyle = "#fff9c4";
+  fx.beginPath();
+  fx.arc(FW * 0.82, FH * 0.12, 52, 0, Math.PI * 2);
+  fx.fill();
+  fx.fillStyle = "#fdd835";
+  fx.beginPath();
+  fx.arc(FW * 0.82, FH * 0.12, 38, 0, Math.PI * 2);
+  fx.fill();
+  fx.restore();
+
+  // Far hill
+  fx.fillStyle = "#a5d6a7";
+  fx.beginPath();
+  fx.moveTo(0, FH * 0.55);
+  for (let x = 0; x <= FW; x += FW / 4) {
+    fx.quadraticCurveTo(x + FW / 8, FH * 0.38, x + FW / 4, FH * 0.55);
+  }
+  fx.lineTo(FW, FH);
+  fx.lineTo(0, FH);
+  fx.closePath();
+  fx.fill();
+
+  // Near grass
+  const grass = fx.createLinearGradient(0, FH * 0.60, 0, FH);
+  grass.addColorStop(0, "#66bb6a");
+  grass.addColorStop(1, "#388e3c");
+  fx.fillStyle = grass;
+  fx.beginPath();
+  fx.moveTo(0, FH * 0.65);
+  for (let x = 0; x <= FW; x += 60) {
+    fx.quadraticCurveTo(x + 30, FH * 0.60, x + 60, FH * 0.65);
+  }
+  fx.lineTo(FW, FH);
+  fx.lineTo(0, FH);
+  fx.closePath();
+  fx.fill();
+
+  // Grass blades
+  fx.strokeStyle = "#2e7d32";
+  fx.lineWidth   = 2;
+  for (let i = 0; i < 40; i++) {
+    const bx = (i * 173) % FW;
+    const by = FH - 10 - ((i * 31) % 60);
+    const h  = 18 + (i * 17) % 28;
+    fx.beginPath();
+    fx.moveTo(bx, by);
+    fx.quadraticCurveTo(bx + (i % 2 ? 8 : -8), by - h * 0.6, bx + (i % 2 ? 4 : -4), by - h);
+    fx.stroke();
+  }
+}
+
+/* ============================================================
+   DRAW A FLOWER  — rooted at bottom-centre, sways
+   ============================================================ */
+function drawFlower(c) {
+  const w = 260, h = 300;
+
+  fx.save();
+  fx.globalAlpha = c.alpha;
+  // Anchor at the base of the stem
+  fx.translate(c.x, c.y);
+  fx.rotate(Math.sin(c.wobble) * c.swayAmt);
+  fx.scale(c.scale, c.scale);
+  // Draw so the bottom-centre of the image is at the origin
+  fx.drawImage(c.img, -w / 2, -h, w, h);
+  fx.restore();
+}
+
+/* ============================================================
+   LOOP
+   ============================================================ */
+function loop(now) {
+  drawBg();
+
+  // Sort back-to-front by y so closer flowers overlap further ones
+  creatures.sort((a, b) => a.y - b.y);
+
+  for (let i = creatures.length - 1; i >= 0; i--) {
+    const c   = creatures[i];
+    const age = now - c.born;
+
+    // Alpha
+    if (c.dying) {
+      c.alpha = Math.max(0, c.alpha - 0.025);
+      if (c.alpha <= 0) { creatures.splice(i, 1); continue; }
+    } else if (age < 1000) {
+      c.alpha = age / 1000;
+    } else if (age > LIFETIME_MS - 2000) {
+      c.alpha = Math.max(0, (LIFETIME_MS - age) / 2000);
+    } else {
+      c.alpha = 1;
+    }
+
+    if (age > LIFETIME_MS) { creatures.splice(i, 1); continue; }
+
+    // Gentle sway
+    c.wobble += c.sway;
+
+    drawFlower(c);
+  }
+
+  requestAnimationFrame(loop);
+}
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
