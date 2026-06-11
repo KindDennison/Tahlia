@@ -6,69 +6,78 @@
 <title>Paint an Animal</title>
 
 <style>
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
 
   html, body {
-    margin: 0;
-    height: 100%;
-    overflow: hidden;
+    width: 100%; height: 100%;
     font-family: "Comic Sans MS", "Segoe UI", sans-serif;
     background: #f4f1e0;
-  }
-
-  #paintPanel {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2vmin;
-  }
-
-  h1 {
-    font-size: clamp(1.1em, 3.2vmin, 2.4em);
-    color: #33691e;
-    margin: 1vmin 0;
-    text-align: center;
+    overflow: hidden;
   }
 
   select, button, input { font-family: inherit; }
 
+  /* ═══════════════════════════════════════
+     PORTRAIT  — single scrollable column
+     The page CAN scroll so nothing overlaps.
+     Canvas + controls are centred.
+  ═══════════════════════════════════════ */
+  #paintPanel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 8px 16px;
+    min-height: 100%;
+    gap: 6px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  h1 {
+    font-size: clamp(1em, 3.5vw, 1.6em);
+    color: #33691e;
+    text-align: center;
+    flex-shrink: 0;
+    padding: 2px 0;
+  }
+
   /* ── Habitat tab bar ── */
   #habitatTabs {
     display: flex;
-    gap: 6px;
+    gap: 5px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    padding: 4px 2px 6px;
+    padding: 2px 4px 4px;
     width: 100%;
-    max-width: 520px;
-    justify-content: center;
+    max-width: 560px;
+    flex-shrink: 0;
   }
   #habitatTabs::-webkit-scrollbar { display: none; }
 
   .hTab {
-    flex: 0 0 auto;
+    flex: 1 1 0;
+    min-width: 56px;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 2px;
-    padding: 7px 12px 6px;
-    border-radius: 18px;
+    padding: 5px 6px 4px;
+    border-radius: 14px;
     border: 3px solid transparent;
     cursor: pointer;
-    font-size: clamp(0.65em, 2.2vmin, 0.9em);
+    font-size: clamp(0.55em, 1.8vw, 0.78em);
     font-weight: bold;
     color: #fff;
     transition: transform .15s, box-shadow .15s;
-    user-select: none;
-    -webkit-user-select: none;
+    user-select: none; -webkit-user-select: none;
+    white-space: nowrap;
   }
-  .hTab .tabEmoji { font-size: clamp(1.3em, 4vmin, 1.9em); }
+  .hTab .tabEmoji { font-size: clamp(1.2em, 3.5vw, 1.6em); line-height: 1.2; }
   .hTab.active {
     border-color: #fff;
-    transform: scale(1.10);
+    transform: scale(1.08);
     box-shadow: 0 3px 10px rgba(0,0,0,.28);
   }
 
@@ -76,34 +85,33 @@
   #animalPicker {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
+    gap: 5px;
     width: 100%;
-    max-width: 520px;
-    padding: 4px 2px;
+    max-width: 560px;
+    flex-shrink: 0;
   }
 
   .animalBtn {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
+    gap: 2px;
     background: #fff;
     border: 3px solid #ddd;
-    border-radius: 14px;
-    padding: 5px 3px 6px;
+    border-radius: 12px;
+    padding: 4px 3px 5px;
     cursor: pointer;
     transition: transform .12s, border-color .12s, box-shadow .12s;
-    -webkit-tap-highlight-color: transparent;
   }
   .animalBtn img {
     width: 100%;
     aspect-ratio: 1;
     object-fit: contain;
-    border-radius: 8px;
+    border-radius: 6px;
     pointer-events: none;
   }
   .animalBtn span {
-    font-size: clamp(0.6em, 1.9vmin, 0.82em);
+    font-size: clamp(0.55em, 1.6vw, 0.75em);
     font-weight: bold;
     color: #444;
     text-align: center;
@@ -115,103 +123,169 @@
     transform: scale(1.06);
   }
 
+  /* ── Canvas ── */
   #paintWrap {
     position: relative;
     touch-action: none;
+    flex-shrink: 0;
   }
 
   #paintCanvas {
     background: #fff;
-    border-radius: 16px;
+    border-radius: 14px;
     box-shadow: 0 4px 12px rgba(0,0,0,.2);
     display: block;
+    /* Size set by JS */
   }
 
+  /* ── Palette ── */
   #palette {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 1.5vmin;
-    margin: 2vmin 0 1vmin;
-    max-width: 90vmin;
+    gap: clamp(4px, 1.5vw, 10px);
+    width: 100%;
+    max-width: 560px;
+    flex-shrink: 0;
   }
 
   .swatch {
-    width: 6vmin;
-    height: 6vmin;
-    min-width: 36px;
-    min-height: 36px;
-    max-width: 60px;
-    max-height: 60px;
+    width:  clamp(30px, 6vw, 52px);
+    height: clamp(30px, 6vw, 52px);
     border-radius: 50%;
     border: 3px solid #fff;
     box-shadow: 0 2px 5px rgba(0,0,0,.3);
     cursor: pointer;
+    flex-shrink: 0;
   }
+  .swatch.active { border-color: #333; transform: scale(1.18); }
 
-  .swatch.active {
-    border-color: #333;
-    transform: scale(1.18);
-  }
-
+  /* ── Brush row ── */
   #brushRow {
     display: flex;
     align-items: center;
-    gap: 2vmin;
-    margin: 1vmin 0 2vmin;
+    gap: 10px;
+    flex-shrink: 0;
   }
-
-  #brushRow label {
-    font-size: clamp(.9em, 2.2vmin, 1.4em);
-    color: #555;
-  }
-
-  #brushSize {
-    width: 40vmin;
-    max-width: 320px;
-  }
-
+  #brushRow label { font-size: clamp(.85em, 2vw, 1.1em); color: #555; }
+  #brushSize { width: clamp(120px, 35vw, 260px); }
   #brushPreview {
-    width: 7vmin;
-    height: 7vmin;
-    max-width: 56px;
-    max-height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: clamp(28px, 5vw, 46px);
+    height: clamp(28px, 5vw, 46px);
+    display: flex; align-items: center; justify-content: center;
   }
+  #brushPreview div { background: #333; border-radius: 50%; }
 
-  #brushPreview div {
-    background: #333;
-    border-radius: 50%;
-  }
-
+  /* ── Send button ── */
   #sendBtn {
-    font-size: clamp(1.1em, 3vmin, 2em);
+    font-size: clamp(1em, 2.8vw, 1.6em);
     font-weight: bold;
     color: #fff;
     background: #ff7043;
     border: none;
-    padding: 2vmin 5vmin;
+    padding: clamp(8px,1.8vw,14px) clamp(20px,5vw,40px);
     border-radius: 40px;
     box-shadow: 0 4px 0 #d84315;
     cursor: pointer;
+    flex-shrink: 0;
   }
-
-  #sendBtn:active {
-    transform: translateY(3px);
-    box-shadow: 0 1px 0 #d84315;
-  }
-
-  #sendBtn:disabled {
-    opacity: .5;
-  }
+  #sendBtn:active  { transform: translateY(3px); box-shadow: 0 1px 0 #d84315; }
+  #sendBtn:disabled { opacity: .5; }
 
   #status {
-    height: 3vmin;
-    font-size: clamp(.8em, 2vmin, 1.2em);
+    min-height: 1.4em;
+    font-size: clamp(.75em, 1.8vw, 1em);
     color: #777;
-    margin-top: 1vmin;
+    flex-shrink: 0;
+  }
+
+  /* ═══════════════════════════════════════
+     LANDSCAPE  — two columns:
+     left = picker,  right = canvas + tools
+  ═══════════════════════════════════════ */
+  @media (orientation: landscape) {
+    html, body { overflow: hidden; }
+
+    #paintPanel {
+      flex-direction: row;
+      align-items: stretch;
+      justify-content: center;
+      padding: 6px 10px;
+      gap: 10px;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    /* Left panel: habitat tabs (now vertical) + animal grid */
+    #pickerCol {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex: 0 0 auto;
+      width: clamp(160px, 28vw, 240px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      align-items: stretch;
+    }
+    #pickerCol::-webkit-scrollbar { display: none; }
+
+    #habitatTabs {
+      flex-direction: column;
+      max-width: none;
+      width: 100%;
+      gap: 4px;
+      padding: 2px;
+      overflow-x: hidden;
+      overflow-y: visible;
+    }
+    .hTab {
+      flex-direction: row;
+      justify-content: flex-start;
+      gap: 6px;
+      padding: 5px 8px;
+      font-size: clamp(0.6em, 1.4vh, 0.82em);
+      min-width: unset;
+      flex: 0 0 auto;
+    }
+    .hTab .tabEmoji { font-size: clamp(1em, 2.4vh, 1.3em); }
+
+    #animalPicker {
+      max-width: none;
+      width: 100%;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4px;
+    }
+    .animalBtn span { font-size: clamp(0.5em, 1.2vh, 0.7em); }
+
+    /* Right panel: title + canvas + tools, scrollable if needed */
+    #canvasCol {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      flex: 1 1 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      justify-content: center;
+      min-width: 0;
+    }
+    #canvasCol::-webkit-scrollbar { display: none; }
+
+    h1 { font-size: clamp(0.85em, 2vh, 1.2em); }
+
+    #palette { gap: clamp(3px, 1vh, 8px); }
+    .swatch {
+      width:  clamp(24px, 4.5vh, 42px);
+      height: clamp(24px, 4.5vh, 42px);
+    }
+
+    #sendBtn {
+      font-size: clamp(0.85em, 2vh, 1.3em);
+      padding: clamp(6px,1.2vh,10px) clamp(16px,3vw,28px);
+    }
   }
 
   #adminToggle {
@@ -320,10 +394,33 @@
 <body>
 
 <div id="paintPanel">
-  <h1 id="titleText">Paint your butterfly, then let it fly!</h1>
 
-  <div id="habitatTabs"></div>
-  <div id="animalPicker"></div>
+  <!-- LEFT / TOP: habitat tabs + animal picker -->
+  <div id="pickerCol">
+    <div id="habitatTabs"></div>
+    <div id="animalPicker"></div>
+  </div>
+
+  <!-- RIGHT / BOTTOM: title + canvas + palette + controls -->
+  <div id="canvasCol">
+    <h1 id="titleText">Paint your butterfly, then let it fly!</h1>
+
+    <div id="paintWrap">
+      <canvas id="paintCanvas"></canvas>
+    </div>
+
+    <div id="palette"></div>
+
+    <div id="brushRow">
+      <label for="brushSize">Brush</label>
+      <input type="range" id="brushSize" min="6" max="40" value="16">
+      <div id="brushPreview"><div></div></div>
+    </div>
+
+    <button id="sendBtn">Send away! 🦋</button>
+    <div id="status"></div>
+  </div>
+
   <!-- hidden select kept for JS compatibility -->
   <select id="animalSelect" style="display:none">
     <option value="butterfly">Butterfly</option>
@@ -347,20 +444,6 @@
     <option value="tulip">Tulip</option>
   </select>
 
-  <div id="paintWrap">
-    <canvas id="paintCanvas" width="320" height="300"></canvas>
-  </div>
-
-  <div id="palette"></div>
-
-  <div id="brushRow">
-    <label for="brushSize">Brush</label>
-    <input type="range" id="brushSize" min="6" max="40" value="16">
-    <div id="brushPreview"><div></div></div>
-  </div>
-
-  <button id="sendBtn">Send away! 🦋</button>
-  <div id="status"></div>
 </div>
 
 <button id="adminToggle">Admin</button>
@@ -628,6 +711,32 @@ sizeInp.addEventListener('input', () => {
   updatePreview();
 });
 updatePreview();
+
+/* ============================================================
+   CANVAS SIZING  — fits available space in both orientations
+   ============================================================ */
+function sizeCanvas() {
+  const isLandscape = window.innerWidth > window.innerHeight;
+  // In landscape the canvas column is ~72% of viewport width minus padding
+  // In portrait it's the full width minus padding, capped at 560px
+  const maxW = isLandscape
+    ? Math.floor((window.innerWidth - 260) * 0.96)
+    : Math.min(window.innerWidth - 20, 560);
+  const maxH = isLandscape
+    ? Math.floor(window.innerHeight * 0.56)
+    : Math.floor(window.innerHeight * 0.38);
+  const size = Math.min(maxW, maxH, 520);
+  canvas.style.width  = size + 'px';
+  canvas.style.height = size + 'px';
+  canvas.width  = size;
+  canvas.height = size;
+}
+
+window.addEventListener('resize', () => {
+  sizeCanvas();
+  if (animalSel.value) loadAnimal(animalSel.value);
+});
+sizeCanvas();
 
 /* ============================================================
    LOAD AN ANIMAL  (image-based, replaces the old vector code)
