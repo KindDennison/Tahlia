@@ -50,6 +50,28 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+ /* ============================================================
+   WAKE LOCK — keeps the screen on while the page is visible
+   ============================================================ */
+let wakeLock = null;
+ 
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return; // not supported
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    console.log('Wake lock acquired.');
+  } catch (err) {
+    console.warn('Wake lock failed:', err);
+  }
+}
+ 
+// Re-acquire if the tab becomes visible again (e.g. after alt-tab)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') requestWakeLock();
+});
+ 
+requestWakeLock();
+
 const sc = document.getElementById("safariCanvas");
 const sx = sc.getContext("2d");
 
