@@ -370,6 +370,12 @@
     text-align: center;
   }
 
+  .adminCard.is-saved {
+    border-color: #2e7d32;
+    background: #f1f8e9;
+    box-shadow: 0 0 0 2px #2e7d32;
+  }
+
   .adminCard img {
     width: 100%;
     height: 100px;
@@ -384,6 +390,15 @@
     margin: 4px 0 8px;
   }
 
+  .adminCard .saved-badge {
+    display: none;
+    font-size: 0.7em;
+    font-weight: bold;
+    color: #2e7d32;
+    margin-bottom: 4px;
+  }
+  .adminCard.is-saved .saved-badge { display: block; }
+
   .adminCard button {
     width: 100%;
     margin-top: 4px;
@@ -397,6 +412,14 @@
 
   .adminCard button.danger {
     background: #c62828;
+  }
+
+  .adminCard button.save-btn {
+    background: #2e7d32;
+  }
+
+  .adminCard button.unsave-btn {
+    background: #f57f17;
   }
 </style>
 </head>
@@ -423,7 +446,7 @@
 
     <div id="brushRow">
       <label for="brushSize">Brush</label>
-      <input type="range" id="brushSize" min="6" max="40" value="16">
+      <input type="range" id="brushSize" min="6" max="80" value="16">
       <div id="brushPreview"><div></div></div>
     </div>
 
@@ -469,7 +492,7 @@
 
   <div id="adminTools" style="display:none;">
     <div class="adminRow">
-      <button id="loadRecent" class="good">Load recent drawings</button>
+      <button id="loadRecent" class="good">Load all drawings</button>
       <button id="deleteGarden" class="danger">Delete garden drawings</button>
       <button id="deleteAquarium" class="danger">Delete aquarium drawings</button>
       <button id="deleteSafari" class="danger">Delete safari drawings</button>
@@ -478,6 +501,7 @@
       <button id="deleteAll" class="danger">Delete ALL drawings</button>
       <button id="closeAdmin2">Close</button>
     </div>
+    <p style="font-size:0.85em;color:#555;margin:-4px 0 8px;">⚠️ Bulk delete commands skip drawings marked as <strong>Saved</strong>.</p>
 
     <div id="adminStatus"></div>
     <div id="adminList"></div>
@@ -497,10 +521,10 @@ import {
   getDocs,
   deleteDoc,
   doc,
+  updateDoc,
   query,
   where,
-  orderBy,
-  limit
+  orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -713,8 +737,9 @@ COLOURS.forEach((c, i) => {
 });
 
 function updatePreview() {
-  preview.style.width  = brushSize + 'px';
-  preview.style.height = brushSize + 'px';
+  const displaySize = Math.min(brushSize, 44); // cap preview circle visually
+  preview.style.width  = displaySize + 'px';
+  preview.style.height = displaySize + 'px';
 }
 sizeInp.addEventListener('input', () => {
   brushSize = parseInt(sizeInp.value, 10);
@@ -995,6 +1020,7 @@ sendBtn.addEventListener('click', async () => {
       img: dataUrl,
       animal,
       habitat,
+      saved: false,
       createdAt: serverTimestamp()
     });
 
@@ -1044,12 +1070,15 @@ unlockAdmin.onclick = () => {
   }
 };
 
+/* Bulk delete — skips any document where saved === true */
 async function deleteByQuery(q, label) {
-  if (!confirm(`Are you sure you want to delete ${label}?`)) return;
+  if (!confirm(`Are you sure you want to delete ${label}? Saved drawings will be kept.`)) return;
   adminStatus.textContent = "Deleting…";
   const snap = await getDocs(q);
-  await Promise.all(snap.docs.map(d => deleteDoc(doc(db, "creatures", d.id))));
-  adminStatus.textContent = `Deleted ${snap.size} drawing(s).`;
+  const toDelete = snap.docs.filter(d => !d.data().saved);
+  await Promise.all(toDelete.map(d => deleteDoc(doc(db, "creatures", d.id))));
+  const skipped = snap.size - toDelete.length;
+  adminStatus.textContent = `Deleted ${toDelete.length} drawing(s)${skipped ? `, kept ${skipped} saved` : ''}.`;
   loadRecentDrawings();
 }
 
@@ -1074,20 +1103,25 @@ document.getElementById('deleteHouse').onclick = async () => {
 document.getElementById('loadRecent').onclick = loadRecentDrawings;
 
 async function loadRecentDrawings() {
-  adminStatus.textContent = "Loading recent drawings…";
+  adminStatus.textContent = "Loading drawings…";
   adminList.innerHTML = "";
 
-  const q    = query(creaturesCol, orderBy("createdAt","desc"), limit(30));
+  const q    = query(creaturesCol, orderBy("createdAt","desc"));
   const snap = await getDocs(q);
 
   snap.forEach(d => {
     const data = d.data();
+    const isSaved = !!data.saved;
 
     const card = document.createElement("div");
-    card.className = "adminCard";
+    card.className = "adminCard" + (isSaved ? " is-saved" : "");
 
     const img = document.createElement("img");
     img.src = data.img;
+
+    const badge = document.createElement("div");
+    badge.className = "saved-badge";
+    badge.textContent = "⭐ Saved";
 
     const label = document.createElement("small");
     label.textContent = `${data.animal || "unknown"} / ${data.habitat || "unknown"}`;
@@ -1099,30 +1133,45 @@ async function loadRecentDrawings() {
         img: data.img,
         animal: data.animal,
         habitat: data.habitat,
+        saved: false,
         createdAt: serverTimestamp(),
         respawned: true
       });
       adminStatus.textContent = "Drawing respawned.";
     };
 
+    const saveBtn = document.createElement("button");
+    saveBtn.className = isSaved ? "unsave-btn" : "save-btn";
+    saveBtn.textContent = isSaved ? "Unsave" : "Save ⭐";
+    saveBtn.onclick = async () => {
+      const newSaved = !isSaved;
+      await updateDoc(doc(db, "creatures", d.id), { saved: newSaved });
+      adminStatus.textContent = newSaved ? "Drawing saved — protected from bulk delete." : "Drawing unsaved.";
+      loadRecentDrawings();
+    };
+
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "danger";
     deleteBtn.textContent = "Delete";
     deleteBtn.onclick = async () => {
-      if (!confirm("Delete this drawing?")) return;
+      if (isSaved && !confirm("This drawing is saved. Are you sure you want to delete it?")) return;
+      if (!isSaved && !confirm("Delete this drawing?")) return;
       await deleteDoc(doc(db, "creatures", d.id));
       adminStatus.textContent = "Drawing deleted.";
       loadRecentDrawings();
     };
 
     card.appendChild(img);
+    card.appendChild(badge);
     card.appendChild(label);
     card.appendChild(respawnBtn);
+    card.appendChild(saveBtn);
     card.appendChild(deleteBtn);
     adminList.appendChild(card);
   });
 
-  adminStatus.textContent = `Loaded ${snap.size} drawing(s).`;
+  const savedCount = snap.docs.filter(d => d.data().saved).length;
+  adminStatus.textContent = `Loaded ${snap.size} drawing(s)${savedCount ? ` — ${savedCount} saved` : ''}.`;
 }
 
 /* ============================================================
